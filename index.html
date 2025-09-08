@@ -7,7 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="style.css">
   <style>
     body { visibility: hidden; }
 
@@ -126,7 +126,7 @@
     <div class="profile-section-desktop">
       <div class="profile-dropdown">
         <div class="profile-info" onclick="toggleDropdown(event)">
-          <img id="profile-icon-display" src="/images/PROFILE_ICONS/Default.png" alt="Perfil" class="w-8 h-8 rounded-full">
+          <img id="profile-icon-display" src="Default.png" alt="Perfil" class="w-8 h-8 rounded-full">
           <span id="user-name"></span>
           <i class="fas fa-caret-down"></i>
         </div>
@@ -195,7 +195,7 @@
 
   <!-- Scripts -->
   <script type="module">
-    import { auth, onAuthStateChanged, signOut, db, ref, get, set, onValue } from '/js/firebase-init.js';
+    import { auth, onAuthStateChanged, signOut, db, ref, get, set, onValue } from './firebase-init.js';
 
     const protectedPages = ['index.html', 'player-page.html', 'Player-TV.html', 'profile.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -263,7 +263,7 @@
       });
     });
   </script>
-  <script src="/js/auth.js" type="module"></script>
-  <script src="/js/player.js" type="module"></script>
+  <script src="auth.js" type="module"></script>
+  <script src="player.js" type="module"></script>
 </body>
 </html>
