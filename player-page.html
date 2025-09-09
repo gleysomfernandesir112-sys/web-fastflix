@@ -265,6 +265,7 @@
         <button id="prev-episode" style="display: none;">Episódio Anterior</button>
         <button id="next-episode" style="display: none;">Próximo Episódio</button>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -285,15 +286,26 @@
             const prevBtn = document.getElementById('prev-episode');
             const nextBtn = document.getElementById('next-episode');
 
-            if (videoPlayer && videoUrl) {
+            // Configuração do HLS para streams .m3u8
+            if (Hls.isSupported() && videoUrl && videoUrl.endsWith('.m3u8')) {
+                const hls = new Hls();
+                hls.loadSource(videoUrl);
+                hls.attachMedia(videoPlayer);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoPlayer.play().catch(e => console.error('Erro ao reproduzir após HLS:', e));
+                });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('Erro HLS:', data);
+                });
+            } else if (videoUrl) {
                 videoPlayer.src = decodeURIComponent(videoUrl);
                 videoPlayer.load();
                 videoPlayer.play().catch(e => console.error('Erro ao reproduzir:', e));
+            }
 
-                const isLive = videoUrl.includes('live') || videoUrl.includes('stream');
-                if (isLive && liveIndicator) {
-                    liveIndicator.style.display = 'inline';
-                }
+            const isLive = videoUrl && (videoUrl.includes('live') || videoUrl.includes('stream') || videoUrl.endsWith('.m3u8'));
+            if (isLive && liveIndicator) {
+                liveIndicator.style.display = 'inline';
             }
 
             videoPlayer.addEventListener('loadedmetadata', () => {
@@ -388,6 +400,7 @@
                         }
                     }
                 }
+                updateControlsLayout();
             }
 
             function isFullscreen() {
@@ -403,6 +416,16 @@
                 return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             }
 
+            function updateControlsLayout() {
+                const controls = document.querySelector('.controls');
+                if (isFullscreen()) {
+                    controls.style.opacity = 0; // Força a recarregar a visibilidade
+                    setTimeout(() => {
+                        controls.style.opacity = 1; // Restaura após um frame
+                    }, 0);
+                }
+            }
+
             document.addEventListener('fullscreenchange', () => {
                 if (!isFullscreen()) {
                     console.log('Saiu do modo tela cheia');
@@ -414,6 +437,7 @@
                         }
                     }
                 }
+                updateControlsLayout();
             });
 
             const currentSeries = JSON.parse(sessionStorage.getItem('currentSeries'));
