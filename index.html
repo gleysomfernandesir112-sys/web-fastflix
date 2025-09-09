@@ -220,7 +220,7 @@
             console.log("User data from DB:", userData);
             const isExpired = userData.expirationDate && new Date(userData.expirationDate) < new Date();
 
-            if (userData.status !== 'ativo') {
+            if (userData.status && userData.status !== 'ativo') {
               console.log("Account not active. Status:", userData.status);
               alert('Sua conta não está ativa. Entre em contato com o suporte.');
               signOut(auth);
