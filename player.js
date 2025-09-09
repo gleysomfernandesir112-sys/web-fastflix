@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoadingIndicator(true);
 
         const filePaths = [
-            'https://frosty-dream-d6c8.richterandre394.workers.dev/'
+            'https://frosty-math-63b0.richterandre394.workers.dev/'
 
         ];
         const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
