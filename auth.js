@@ -21,7 +21,7 @@ function updateProfileSection(user) {
     onValue(userRef, (snapshot) => {
         if (snapshot.exists()) {
             const userData = snapshot.val();
-            profileIconDisplay.src = `/images/PROFILE_ICONS/${userData.profileIcon || 'Default.png'}`;
+            profileIconDisplay.src = `${userData.profileIcon || 'Default.png'}`;
             userNameDisplay.textContent = (userData.name || user.email).split('@')[0];
 
             // Lógica para o link de admin

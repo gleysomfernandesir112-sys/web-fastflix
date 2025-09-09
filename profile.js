@@ -3,7 +3,7 @@ import { updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/fireb
 
 async function getIconFiles() {
     try {
-        const response = await fetch('/images/PROFILE_ICONS/icons.json');
+        const response = await fetch('icons.json');
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             // Define o src para iniciar o carregamento
-            img.src = `/images/PROFILE_ICONS/${fileName}`;
+            img.src = `${fileName}`;
 
             div.addEventListener('click', () => {
                 document.querySelectorAll('.icon-item.selected').forEach(el => el.classList.remove('selected'));

@@ -190,7 +190,11 @@
   <!-- Expired Account Modal -->
   <div id="expired-account-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 2000;">
     <h2 class="text-3xl font-bold mb-4">Sua conta está expirada!</h2>
-    <p class="text-xl">Renove sua conta para continuar usando nossos serviços.</p>
+    <p class="text-xl mb-6">Renove sua assinatura ou troque de conta para continuar.</p>
+    <div class="flex gap-4">
+        <button id="renew-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Renovar Agora</button>
+        <button id="switch-account-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Trocar de Conta</button>
+    </div>
   </div>
 
   <!-- Scripts -->
@@ -216,15 +220,23 @@
             console.log("User data from DB:", userData);
             const isExpired = userData.expirationDate && new Date(userData.expirationDate) < new Date();
 
-            if (userData.status === 'blocked') {
-              console.log("Account blocked. Signing out and redirecting.");
-              alert('Sua conta está bloqueada. Entre em contato com o suporte.');
+            if (userData.status !== 'ativo') {
+              console.log("Account not active. Status:", userData.status);
+              alert('Sua conta não está ativa. Entre em contato com o suporte.');
               signOut(auth);
               window.location.href = 'login.html';
             } else if (isExpired) {
               console.log("Account expired. Showing modal.");
               document.getElementById('expired-account-modal').style.display = 'flex';
               document.body.style.visibility = 'visible'; // Make body visible to show the modal
+
+              document.getElementById('switch-account-button').addEventListener('click', () => {
+                signOut(auth).then(() => {
+                    window.location.href = 'login.html';
+                }).catch((error) => {
+                    console.error('Sign out error', error);
+                });
+              });
             } else {
               console.log("Account active. Making body visible.");
               document.body.style.visibility = 'visible';

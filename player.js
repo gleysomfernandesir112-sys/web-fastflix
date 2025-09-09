@@ -95,7 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoadingIndicator(true);
 
         const filePaths = [
-            'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u'
+            'https://frosty-dream-d6c8.richterandre394.workers.dev/lista.m3u'
+
         ];
         const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
 
