@@ -133,10 +133,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     content = await response.text();
                     loadedFrom = fallbackUrl;
                     console.log(`Carregado de fallback URL em ${performance.now() - fetchStart} ms`);
+                } else {
+                    // Tentar reconexão com HTTP explícito como fallback
+                    const httpFallbackUrl = fallbackUrl.replace('https://', 'http://');
+                    const httpResponse = await fetch(httpFallbackUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0',
+                            'Accept': 'text/plain,*/*',
+                            'Referer': 'http://localhost'
+                        }
+                    });
+                    if (httpResponse.ok) {
+                        content = await httpResponse.text();
+                        loadedFrom = httpFallbackUrl;
+                        console.log(`Carregado de fallback HTTP URL em ${performance.now() - fetchStart} ms`);
+                    } else {
+                        console.error(`Falha ao carregar fallback HTTP URL: ${httpFallbackUrl}`, httpResponse.status);
+                        alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
+                        showLoadingIndicator(false);
+                        return;
+                    }
                 }
             } catch (error) {
                 console.error(`Falha ao carregar fallback URL:`, error.message);
-                alert(`Erro ao carregar a lista M3U`);
+                alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
                 showLoadingIndicator(false);
                 return;
             }
