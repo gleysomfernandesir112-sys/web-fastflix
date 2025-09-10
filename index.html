@@ -44,72 +44,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com;
-        style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com;
+        script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com;
+        style-src 'self' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' https://via.placeholder.com https://kitsu.io https://image.tmdb.org data:;
         connect-src 'self' https://fasthub-9a206-default-rtdb.firebaseio.com https://kitsu.io https://api.themoviedb.org https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev;
         media-src *;
     ">
     <title>FastFlix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script type="module" src="app.js"></script>
-    <style>
-        body { background-color: #141414; }
-        .navbar { background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
-        .carousel { overflow-x: auto; white-space: nowrap; }
-        .carousel::-webkit-scrollbar { display: none; }
-        .channel-item { display: inline-block; width: 200px; margin-right: 10px; }
-        #player-modal { background: rgba(0,0,0,0.9); }
-        video { width: 100%; max-height: 70vh; }
-    </style>
 </head>
-<body class="text-white">
-    <nav class="navbar fixed top-0 w-full z-20 flex justify-between items-center p-4">
-        <h1 class="text-2xl font-bold">FastFlix</h1>
-        <div class="flex items-center space-x-4">
-            <a href="#" id="filmes-tab" class="hover:text-gray-300" aria-label="Filmes">Filmes</a>
-            <a href="#" id="series-tab" class="hover:text-gray-300" aria-label="Séries">Séries</a>
-            <a href="#" id="tv-tab" class="hover:text-gray-300" aria-label="TV ao Vivo">TV ao Vivo</a>
-            <input id="search" type="text" placeholder="Buscar..." class="bg-gray-800 text-white p-2 rounded" aria-label="Buscar conteúdo">
-            <div class="relative">
+<body>
+    <nav class="navbar">
+        <h1 class="logo">FastFlix</h1>
+        <div class="nav-links">
+            <a href="#" id="filmes-tab" aria-label="Filmes">Filmes</a>
+            <a href="#" id="series-tab" aria-label="Séries">Séries</a>
+            <a href="#" id="tv-tab" aria-label="TV ao Vivo">TV ao Vivo</a>
+            <input id="search" type="text" placeholder="Buscar..." aria-label="Buscar conteúdo">
+            <div class="profile-container">
                 <button id="profile-button" aria-label="Perfil">
-                    <img id="profile-icon-display" src="Default.png" alt="Ícone do perfil" class="w-8 h-8 rounded">
-                    <span id="user-name" class="ml-2"></span>
+                    <img id="profile-icon-display" src="Default.png" alt="Ícone do perfil" class="profile-icon">
+                    <span id="user-name"></span>
                 </button>
-                <div class="profile-dropdown absolute right-0 mt-2 w-48 bg-gray-800 rounded shadow-lg hidden" aria-expanded="false">
-                    <a href="profile.html" class="block px-4 py-2 text-white hover:bg-gray-700">Personalizar Perfil</a>
-                    <button id="logout-button" class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700">Desconectar</button>
+                <div class="profile-dropdown">
+                    <a href="profile.html">Personalizar Perfil</a>
+                    <button id="logout-button">Desconectar</button>
                 </div>
             </div>
         </div>
     </nav>
-    <main class="mt-20 px-4">
-        <div id="loading" class="text-center text-gray-400 hidden">Carregando lista de canais...</div>
+    <main>
+        <div id="loading" class="loading">Carregando lista de canais...</div>
         <section id="filmes-category" class="category active">
-            <h2 class="text-xl font-bold mb-4">Filmes</h2>
+            <h2>Filmes</h2>
             <div id="filmes-list" class="carousel"></div>
-            <div id="filmes-pagination" class="flex justify-center mt-4"></div>
+            <div id="filmes-pagination" class="pagination"></div>
         </section>
         <section id="series-category" class="category hidden">
-            <h2 class="text-xl font-bold mb-4">Séries</h2>
+            <h2>Séries</h2>
             <div id="series-list" class="carousel"></div>
-            <div id="series-pagination" class="flex justify-center mt-4"></div>
+            <div id="series-pagination" class="pagination"></div>
         </section>
         <section id="tv-category" class="category hidden">
-            <h2 class="text-xl font-bold mb-4">TV ao Vivo</h2>
+            <h2>TV ao Vivo</h2>
             <div id="tv-list" class="carousel"></div>
-            <div id="tv-pagination" class="flex justify-center mt-4"></div>
+            <div id="tv-pagination" class="pagination"></div>
         </section>
     </main>
-    <div id="player-modal" class="fixed inset-0 z-30 hidden" aria-hidden="true">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-gray-900 p-6 rounded-lg max-w-4xl w-full">
-                <button id="close-modal" class="text-white float-right" aria-label="Fechar modal">✕</button>
-                <div id="modal-content" class="mb-4"></div>
-                <video id="videoPlayer" controls></video>
-            </div>
+    <div id="player-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-content">
+            <button id="close-modal" aria-label="Fechar modal">✕</button>
+            <div id="modal-content-inner"></div>
+            <video id="videoPlayer" controls></video>
         </div>
     </div>
 </body>

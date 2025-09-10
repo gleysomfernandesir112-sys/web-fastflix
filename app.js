@@ -2,23 +2,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebas
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence, browserLocalPersistence, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
 
-// Configuração do Firebase (usar variáveis de ambiente em produção)
 const firebaseConfig = {
-  apiKey: "AIzaSyCY9sq12w7H9X3hm9FLa_KkazKONpm1nJE",
-  authDomain: "fasthub-9a206.firebaseapp.com",
-  databaseURL: "https://fasthub-9a206-default-rtdb.firebaseio.com",
-  projectId: "fasthub-9a206",
-  storageBucket: "fasthub-9a206.appspot.com",
-  messagingSenderId: "685686875831",
-  appId: "1:685686875831:web:a31c42df4b9f6bd7b88f32"
+    apiKey: "AIzaSyCY9sq12w7H9X3hm9FLa_KkazKONpm1nJE",
+    authDomain: "fasthub-9a206.firebaseapp.com",
+    databaseURL: "https://fasthub-9a206-default-rtdb.firebaseio.com",
+    projectId: "fasthub-9a206",
+    storageBucket: "fasthub-9a206.appspot.com",
+    messagingSenderId: "685686875831",
+    appId: "1:685686875831:web:a31c42df4b9f6bd7b88f32"
 };
 
-// Inicialização do Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-// Constantes
 const TMDB_API_KEY = 'f87eef10a1d7a66a49e0325f48efad94';
 const MAX_CACHE_SIZE = 50 * 1024 * 1024;
 const CACHE_VALIDITY_MS = 24 * 3600000;
@@ -31,7 +28,6 @@ const NAVIGATION_DEBOUNCE_MS = 1000;
 const POSTER_CACHE = new Map();
 let hls = null;
 
-// Utilitários
 function normalizeTitle(title) {
     return title ? title.trim().replace(/\b\w/g, c => c.toUpperCase()) : "Sem Título";
 }
@@ -75,10 +71,9 @@ async function fetchSeriesPoster(seriesName) {
 
 function showLoadingIndicator(show) {
     const loadingEl = document.getElementById('loading');
-    if (loadingEl) loadingEl.style.display = show ? 'block' : 'none';
+    if (loadingEl) loadingEl.classList.toggle('active', show);
 }
 
-// M3U Parsing
 function parseGroup(group) {
     const clean = group.replace(/[◆]/g, "").trim();
     const parts = clean.split("|").map(part => part.trim());
@@ -201,7 +196,6 @@ async function loadM3UData() {
     }
 }
 
-// Autenticação
 function updateProfileSection(user) {
     const profileIconDisplay = document.getElementById('profile-icon-display');
     const userNameDisplay = document.getElementById('user-name');
@@ -249,7 +243,7 @@ function handleLoginPage() {
             await signInWithEmailAndPassword(auth, email, password);
             window.location.href = 'index.html';
         } catch (error) {
-            errorMessage.className = 'text-red-400 text-center mt-2';
+            errorMessage.className = 'text-red-400';
             switch (error.code) {
                 case 'auth/invalid-credential':
                     errorMessage.textContent = 'Usuário ou senha inválidos.';
@@ -377,13 +371,13 @@ async function handleProfilePage() {
     saveProfileButton?.addEventListener('click', async () => {
         if (!currentUser) {
             profileMessage.textContent = 'Usuário não encontrado.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
+            profileMessage.className = 'text-red-400';
             return;
         }
         const newName = userNameInput.value.trim();
         if (!newName) {
             profileMessage.textContent = 'O nome de usuário não pode estar vazio.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
+            profileMessage.className = 'text-red-400';
             return;
         }
         const userRef = ref(db, 'users/' + currentUser.uid);
@@ -392,10 +386,10 @@ async function handleProfilePage() {
             if (selectedIconName) updates.profileIcon = selectedIconName;
             await set(userRef, updates, { merge: true });
             profileMessage.textContent = 'Perfil salvo com sucesso!';
-            profileMessage.className = 'text-green-400 text-center mt-2';
+            profileMessage.className = 'text-green-400';
         } catch (error) {
             profileMessage.textContent = 'Erro ao salvar o perfil.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
+            profileMessage.className = 'text-red-400';
         }
     });
 
@@ -406,12 +400,12 @@ async function handleProfilePage() {
         const confirmPassword = document.getElementById('confirm-password').value;
         if (newPassword.length < 6) {
             passwordMessage.textContent = 'A nova senha deve ter pelo menos 6 caracteres.';
-            passwordMessage.className = 'text-red-400 text-center mt-2';
+            passwordMessage.className = 'text-red-400';
             return;
         }
         if (newPassword !== confirmPassword) {
             passwordMessage.textContent = 'As senhas não coincidem.';
-            passwordMessage.className = 'text-red-400 text-center mt-2';
+            passwordMessage.className = 'text-red-400';
             return;
         }
         try {
@@ -419,19 +413,18 @@ async function handleProfilePage() {
             await reauthenticateWithCredential(currentUser, credential);
             await updatePassword(currentUser, newPassword);
             passwordMessage.textContent = 'Senha alterada com sucesso!';
-            passwordMessage.className = 'text-green-400 text-center mt-2';
+            passwordMessage.className = 'text-green-400';
             document.getElementById('change-password-form').reset();
         } catch (error) {
             passwordMessage.textContent = 'Erro ao alterar a senha. Verifique a senha atual.';
-            passwordMessage.className = 'text-red-400 text-center mt-2';
+            passwordMessage.className = 'text-red-400';
         }
     });
 }
 
-// Modal Player
 function openModal(type, data) {
     const modal = document.getElementById('player-modal');
-    const modalContent = document.getElementById('modal-content');
+    const modalContent = document.getElementById('modal-content-inner');
     const videoPlayer = document.getElementById('videoPlayer');
     if (!modal || !modalContent || !videoPlayer) return;
 
@@ -445,10 +438,10 @@ function openModal(type, data) {
     if (type === 'filmes' || type === 'tv') {
         const url = data.url;
         modalContent.innerHTML = `
-            <h2 class="text-2xl font-bold mb-4">${data.title}</h2>
+            <h2>${data.title}</h2>
             ${type === 'tv' ? `
-                <input id="channel-search" type="text" placeholder="Buscar canais..." class="bg-gray-800 text-white p-2 rounded w-full mb-4" aria-label="Buscar canais">
-                <ul id="channel-list" class="space-y-2 max-h-64 overflow-y-auto"></ul>
+                <input id="channel-search" type="text" placeholder="Buscar canais..." aria-label="Buscar canais">
+                <ul id="channel-list"></ul>
             ` : ''}
         `;
         if (type === 'tv') {
@@ -463,17 +456,16 @@ function openModal(type, data) {
     } else if (type === 'series') {
         const seriesData = data;
         modalContent.innerHTML = `
-            <h2 class="text-2xl font-bold mb-4">${seriesData.displayName}</h2>
-            <div id="season-selector" class="mb-4"></div>
-            <div class="flex justify-between">
-                <button id="prev-episode" class="px-4 py-2 bg-gray-700 text-white rounded" aria-label="Episódio anterior">Anterior</button>
-                <button id="next-episode" class="px-4 py-2 bg-gray-700 text-white rounded" aria-label="Próximo episódio">Próximo</button>
+            <h2>${seriesData.displayName}</h2>
+            <div id="season-selector"></div>
+            <div class="episode-nav">
+                <button id="prev-episode" aria-label="Episódio anterior">Anterior</button>
+                <button id="next-episode" aria-label="Próximo episódio">Próximo</button>
             </div>
-            <ul id="episode-list" class="space-y-2 max-h-64 overflow-y-auto mt-4"></ul>
+            <ul id="episode-list"></ul>
         `;
         const sortedSeasons = Object.keys(seriesData.seasons).sort((a, b) => Number(a) - Number(b));
         const select = document.createElement('select');
-        select.className = 'w-full bg-gray-800 text-white p-2 rounded-md';
         select.setAttribute('aria-label', 'Selecionar temporada');
         sortedSeasons.forEach(seasonNumber => {
             const option = document.createElement('option');
@@ -561,7 +553,7 @@ function renderChannelList(channels, containerId, videoPlayerId, filter = '') {
     channelListUl.innerHTML = '';
     const filteredChannels = channels.filter(c => c.title.toLowerCase().includes(filter.toLowerCase()));
     if (filteredChannels.length === 0) {
-        channelListUl.innerHTML = '<li class="text-gray-400">Nenhum canal encontrado.</li>';
+        channelListUl.innerHTML = '<li>Nenhum canal encontrado.</li>';
         return;
     }
     filteredChannels.forEach((channel, index) => {
@@ -570,7 +562,6 @@ function renderChannelList(channels, containerId, videoPlayerId, filter = '') {
         li.dataset.url = channel.url;
         li.setAttribute('role', 'button');
         li.setAttribute('aria-label', `Reproduzir ${channel.title}`);
-        li.className = 'text-white hover:bg-gray-700 p-2 rounded';
         li.addEventListener('click', () => {
             playVideo(channel.url, videoPlayer);
             document.querySelectorAll(`#${containerId} li`).forEach(item => item.classList.remove('active'));
@@ -593,7 +584,6 @@ function renderSeriesEpisodes(season, seriesData, containerId, videoPlayerId) {
         li.dataset.episodeIndex = index;
         li.setAttribute('role', 'button');
         li.setAttribute('aria-label', `Reproduzir ${episode.title}`);
-        li.className = 'text-white hover:bg-gray-700 p-2 rounded';
         li.addEventListener('click', () => {
             updateSeriesEpisode(season, index, seriesData, videoPlayerId);
         });
@@ -666,11 +656,9 @@ async function displayChannels(searchQuery = '') {
             const img = document.createElement('img');
             img.src = currentTab === 'series' ? await fetchSeriesPoster(item.displayName) : (item.logo || 'https://via.placeholder.com/200x300');
             img.alt = item.title || item.displayName;
-            img.className = 'w-full h-auto rounded-lg transition-transform transform hover:scale-105';
             div.appendChild(img);
             const title = document.createElement('span');
             title.textContent = item.title || item.displayName;
-            title.className = 'text-white mt-2 block';
             div.appendChild(title);
             div.addEventListener('click', () => {
                 if (debounceNavigation()) {
@@ -688,14 +676,12 @@ async function displayChannels(searchQuery = '') {
         const prevButton = document.createElement('button');
         prevButton.textContent = 'Anterior';
         prevButton.disabled = currentPage === 1;
-        prevButton.className = 'px-4 py-2 bg-gray-700 text-white rounded mr-2 disabled:opacity-50';
         prevButton.setAttribute('aria-label', 'Página anterior');
         prevButton.addEventListener('click', () => renderPage(currentPage - 1));
         paginationContainer.appendChild(prevButton);
         const nextButton = document.createElement('button');
         nextButton.textContent = 'Próxima';
         nextButton.disabled = currentPage === totalPages;
-        nextButton.className = 'px-4 py-2 bg-gray-700 text-white rounded disabled:opacity-50';
         nextButton.setAttribute('aria-label', 'Próxima página');
         nextButton.addEventListener('click', () => renderPage(currentPage + 1));
         paginationContainer.appendChild(nextButton);
@@ -719,21 +705,13 @@ function setupEventListeners() {
     const filmesTab = document.getElementById('filmes-tab');
     const seriesTab = document.getElementById('series-tab');
     const tvTab = document.getElementById('tv-tab');
-    if (filmesTab) filmesTab.addEventListener('click', () => window.switchTab('filmes'));
-    if (seriesTab) seriesTab.addEventListener('click', () => window.switchTab('series'));
-    if (tvTab) tvTab.addEventListener('click', () => window.switchTab('tv'));
+    if (filmesTab) filmesTab.addEventListener('click', () => switchTab('filmes'));
+    if (seriesTab) seriesTab.addEventListener('click', () => switchTab('series'));
+    if (tvTab) tvTab.addEventListener('click', () => switchTab('tv'));
 
     const searchInput = document.getElementById('search');
     if (searchInput) {
         searchInput.addEventListener('input', () => displayChannels(searchInput.value));
-    }
-
-    const categoryFilter = document.getElementById('category-filter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', (e) => {
-            currentSubcat = e.target.value;
-            displayChannels(document.getElementById('search')?.value || '');
-        });
     }
 
     const closeModalButton = document.getElementById('close-modal');
@@ -748,6 +726,13 @@ function setupEventListeners() {
             dropdown.setAttribute('aria-expanded', 'false');
         }
     });
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.category').forEach(cat => cat.classList.add('hidden'));
+    document.getElementById(`${tab}-category`).classList.remove('hidden');
+    displayChannels();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

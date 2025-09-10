@@ -39,39 +39,36 @@
         }
         </script><!DOCTYPE html>
 <html lang="pt-BR">
-<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' https://cdn.tailwindcss.com https://www.gstatic.com;
-        style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com;
+        script-src 'self' https://www.gstatic.com;
+        style-src 'self' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self';
         connect-src 'self' https://fasthub-9a206-default-rtdb.firebaseio.com;
     ">
     <title>FastFlix - Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <script type="module" src="app.js"></script>
-    <style>
-        body { background-color: #141414; }
-    </style>
 </head>
-<body class="text-white flex items-center justify-center min-h-screen">
-    <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full">
-        <h1 class="text-3xl font-bold mb-6 text-center">FastFlix</h1>
+<body>
+    <div class="login-container">
+        <h1 class="logo">FastFlix</h1>
         <div id="login-form">
-            <label for="username" class="block mb-2">Usuário</label>
-            <input id="username" type="text" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Nome de usuário">
-            <label for="password" class="block mb-2">Senha</label>
-            <input id="password" type="password" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Senha">
-            <div class="flex items-center mb-4">
-                <input id="remember-me" type="checkbox" class="mr-2">
+            <label for="username">Usuário</label>
+            <input id="username" type="text" aria-label="Nome de usuário">
+            <label for="password">Senha</label>
+            <input id="password" type="password" aria-label="Senha">
+            <div class="checkbox-container">
+                <input id="remember-me" type="checkbox">
                 <label for="remember-me">Lembrar-me</label>
             </div>
-            <button id="login-button" class="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700" aria-label="Entrar">Entrar</button>
-            <p id="error-message" class="mt-2 text-center"></p>
+            <button id="login-button" aria-label="Entrar">Entrar</button>
+            <p id="error-message"></p>
         </div>
     </div>
 </body>

@@ -1,0 +1,395 @@
+body {
+    background-color: #141414;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+}
+
+.navbar {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+    z-index: 20;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-links a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.nav-links a:hover {
+    color: #ccc;
+}
+
+.nav-links input {
+    background-color: #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: none;
+}
+
+.profile-container {
+    position: relative;
+}
+
+.profile-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+}
+
+.profile-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: #333;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    width: 12rem;
+}
+
+.profile-dropdown.active {
+    display: block;
+}
+
+.profile-dropdown a,
+.profile-dropdown button {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #fff;
+    text-decoration: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+}
+
+.profile-dropdown a:hover,
+.profile-dropdown button:hover {
+    background-color: #444;
+}
+
+main {
+    margin-top: 5rem;
+    padding: 1rem;
+}
+
+.loading {
+    text-align: center;
+    color: #666;
+    display: none;
+}
+
+.loading.active {
+    display: block;
+}
+
+.category {
+    margin-bottom: 2rem;
+}
+
+.category.hidden {
+    display: none;
+}
+
+.category h2 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.carousel {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.carousel::-webkit-scrollbar {
+    display: none;
+}
+
+.channel-item {
+    display: inline-block;
+    width: 200px;
+    margin-right: 10px;
+    cursor: pointer;
+}
+
+.channel-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.channel-item img:hover {
+    transform: scale(1.05);
+}
+
+.channel-item span {
+    display: block;
+    margin-top: 0.5rem;
+    white-space: normal;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.pagination button {
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 30;
+    display: none;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: #222;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    max-width: 64rem;
+    width: 100%;
+    margin: auto;
+    position: relative;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.modal-content h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+#close-modal {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+#videoPlayer {
+    width: 100%;
+    max-height: 70vh;
+}
+
+#channel-search,
+#season-selector select {
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: none;
+    margin-bottom: 1rem;
+}
+
+#channel-list,
+#episode-list {
+    max-height: 16rem;
+    overflow-y: auto;
+}
+
+#channel-list li,
+#episode-list li {
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+#channel-list li:hover,
+#episode-list li:hover {
+    background-color: #444;
+}
+
+#channel-list li.active,
+#episode-list li.active {
+    background-color: #555;
+}
+
+#prev-episode,
+#next-episode {
+    padding: 0.5rem 1rem;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+
+#prev-episode:disabled,
+#next-episode:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.login-container {
+    max-width: 24rem;
+    width: 100%;
+    background-color: #222;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    margin: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.login-container .logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+#login-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+#login-form input {
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+#login-button {
+    width: 100%;
+    background-color: #e50914;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+}
+
+#login-button:hover {
+    background-color: #c40812;
+}
+
+#error-message,
+#profile-message,
+#password-message {
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.text-red-400 {
+    color: #f87171;
+}
+
+.text-green-400 {
+    color: #34d399;
+}
+
+.profile-section {
+    background-color: #222;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-section h2 {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+#user-name-input {
+    width: 100%;
+    background-color: #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: none;
+    margin-bottom: 1rem;
+}
+
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.icon-item {
+    cursor: pointer;
+}
+
+.icon-item img {
+    width: 100%;
+    height: auto;
+    border-radius: 0.25rem;
+}
+
+.icon-item.selected {
+    outline: 2px solid #e50914;
+}
+
+#save-profile-button,
+#change-password-button {
+    background-color: #e50914;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+}
+
+#save-profile-button:hover,
+#change-password-button:hover {
+    background-color: #c40812;
+}
