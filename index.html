@@ -11,6 +11,12 @@
   <style>
     body { visibility: hidden; }
 
+    /* Estilos Gerais */
+    .max-w-6xl {
+        padding: 1rem;
+    }
+
+    /* Navbar */
     .navbar {
       display: flex;
       align-items: center;
@@ -20,34 +26,11 @@
       color: white;
       position: relative;
     }
-
-    .logo {
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .hamburger {
-      display: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .profile-section-desktop {
-      display: flex;
-      align-items: center;
-    }
-
-    .profile-dropdown {
-      position: relative;
-    }
-
-    .profile-info {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      padding: 5px 10px;
-    }
-
+    .logo { font-size: 1.5rem; font-weight: bold; }
+    .hamburger { display: none; font-size: 1.5rem; cursor: pointer; }
+    .profile-section-desktop { display: flex; align-items: center; }
+    .profile-dropdown { position: relative; }
+    .profile-info { display: flex; align-items: center; cursor: pointer; padding: 5px 10px; }
     .dropdown-content {
       display: none;
       position: absolute;
@@ -61,100 +44,97 @@
       top: 100%;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
+    .dropdown-content a { display: flex; align-items: center; text-decoration: none; color: #fff; padding: 8px 12px; }
+    .dropdown-content a:hover { background-color: #333; }
 
-    .dropdown-content a {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      color: #fff;
-      padding: 8px 12px;
-    }
-
-    .dropdown-content a:hover {
-      background-color: #333;
-    }
-
-    /* Responsividade */
-    @media (max-width: 768px) {
-    .hamburger {
-        display: block;
-    }
-    .logo {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-    }
-    .profile-section-desktop {
-        position: absolute;
-        right: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-    }
-
-    /* Ocultar user-name no mobile */
-    #user-name {
-        display: none;
-    }
-    }
-      /* Estilos específicos para a página de TV */
-    .tv-container {
-      display: flex;
-      height: 100vh;
-      flex-direction: row;
-    }
-    .video-main {
-      flex-grow: 1;
-      background-color: #000;
-    }
-    #channel-list-sidebar {
-      width: 320px;
-      background-color: #1f1f1f;
-      padding: 1rem;
-      overflow-y: auto;
-      border-left: 1px solid #333;
-    }
-    #channel-list-sidebar ul li {
-      padding: 0.75rem;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-    #channel-list-sidebar ul li:hover, #channel-list-sidebar ul li.active {
-      background-color: #e50914;
-    }
-    @media (max-width: 768px) {
-      .tv-container {
-        flex-direction: column;
-      }
-      #channel-list-sidebar {
-        width: 100%;
-        height: 50%;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        transform: translateY(100%);
-        transition: transform 0.3s ease-in-out;
-        z-index: 30;
-      }
-      #channel-list-sidebar.show {
-        transform: translateY(0);
-      }
-    }
+    /* TV Player */
+    .tv-container { display: flex; height: 100vh; flex-direction: row; }
+    .video-main { flex-grow: 1; background-color: #000; }
+    #channel-list-sidebar { width: 320px; background-color: #1f1f1f; padding: 1rem; overflow-y: auto; border-left: 1px solid #333; }
+    #channel-list-sidebar ul li { padding: 0.75rem; cursor: pointer; border-radius: 4px; }
+    #channel-list-sidebar ul li:hover, #channel-list-sidebar ul li.active { background-color: #e50914; }
     .episode-toggle-button {
-        display: none; /* Hidden on desktop */
+        display: none;
         position: absolute;
         bottom: 1rem;
         right: 1rem;
         background-color: rgba(0, 0, 0, 0.5);
         color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.75rem 1.25rem; /* Aumentado */
         border-radius: 9999px;
-        text-decoration: none;
-        font-size: 0.9rem;
+        font-size: 1rem; /* Aumentado */
         z-index: 20;
         border: 1px solid white;
     }
 
+    /* Media Queries para Responsividade */
     @media (max-width: 768px) {
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .hamburger { display: block; }
+        .logo { position: absolute; left: 50%; transform: translateX(-50%); }
+        .profile-section-desktop { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
+        #user-name { display: none; }
+
+        .max-w-6xl { padding: 1rem; }
+        #search, #category-filter {
+            padding: 0.75rem;
+            font-size: 1rem;
+        }
+        .channel-list {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .card p {
+            font-size: 0.875rem;
+        }
+        .pagination button {
+            padding: 0.75rem 1.25rem; /* Aumentado */
+            font-size: 0.9rem; /* Aumentado */
+        }
+
+        /* Modals em tela cheia no mobile */
+        .modal .modal-content {
+            width: 100vw;
+            height: 100vh;
+            max-width: 100vw;
+            max-height: 100vh;
+            border-radius: 0;
+            padding: 0;
+        }
+        #series-player-modal .modal-content {
+            flex-direction: column;
+        }
+        #series-player-modal .video-container {
+            height: 40%;
+        }
+        #series-player-modal .episodes-container {
+            height: 60%;
+            padding: 1rem;
+        }
+        #series-player-modal #modal-episodes {
+             max-height: calc(100% - 120px); /* Ajuste de altura */
+        }
+
+        /* TV Player Mobile */
+        .tv-container { flex-direction: column; }
+        #channel-list-sidebar {
+            width: 100%;
+            height: 60%; /* Aumentado */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 30;
+            border-top: 1px solid #333;
+        }
+        #channel-list-sidebar.show {
+            transform: translateY(0);
+        }
         .episode-toggle-button {
             display: block;
         }
