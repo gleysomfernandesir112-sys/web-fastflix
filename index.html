@@ -118,7 +118,9 @@
     <div class="nav-links" id="nav-links">
       <a href="#" onclick="switchTab('filmes')" id="filmes-tab" class="active">Filmes</a>
       <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
-      <a href="#" onclick="switchTab('tv')" id="tv-tab">TV ao Vivo</a>
+      <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
+      <a href="Player-TV.html" id="tv-tab">TV ao Vivo</a>
+      <!-- Botões mobile -->
       <!-- Botões mobile -->
     </div>
 
@@ -162,9 +164,7 @@
       </div>
       <div class="category" id="tv-category">
         <h2>TV ao Vivo</h2>
-        <div id="tv" class="channel-list">
-          <button onclick="openTvModal()" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Abrir TV ao Vivo</button>
-        </div>
+        <div id="tv" class="channel-list"></div>
         <div id="tv-pagination" class="pagination flex justify-center gap-2 mt-4"></div>
       </div>
     </div>
@@ -193,19 +193,6 @@
   <div id="expired-account-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); color: white; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 2000;">
     <h2 class="text-3xl font-bold mb-4">Sua conta está expirada!</h2>
     <p class="text-xl">Renove sua conta para continuar usando nossos serviços.</p>
-  </div>
-
-  <!-- TV Modal -->
-  <div id="tv-modal" class="modal">
-    <div class="modal-content">
-      <h3 class="text-lg font-bold mb-4">Canais ao Vivo</h3>
-      <input type="text" id="channel-search" placeholder="Buscar canal..." class="w-full p-2 bg-gray-700 rounded mb-4">
-      <ul id="channel-list" class="space-y-2 max-h-80 overflow-y-auto">
-        <!-- Lista de canais será populada via JS -->
-        <li class="text-gray-400">Carregando canais...</li>
-      </ul>
-      <button onclick="closeTvModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Fechar</button>
-    </div>
   </div>
 
   <!-- Scripts -->
