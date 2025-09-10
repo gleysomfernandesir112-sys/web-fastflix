@@ -1,90 +1,97 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' https://www.gstatic.com;
-        style-src 'self' https://fonts.googleapis.com;
-        font-src https://fonts.gstatic.com;
-        img-src 'self' data:;
-        connect-src 'self' https://fasthub-9a206-default-rtdb.firebaseio.com;
-    ">
-    <title>FastFlix - Perfil</title>
-    <link href="styles.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-    <script type="module" src="app.js"></script>
+    <title>Meu Perfil - FastFlix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
+            background-color: #2d3748; /* gray-800 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .icon-item {
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 0.375rem; /* Alterado para cantos levemente arredondados */
+            transition: border-color 0.3s;
+            overflow: hidden; /* Garante que a imagem interna não ultrapasse a borda */
+        }
+        .icon-item.selected {
+            border-color: #e53e3e; /* red-600 */
+        }
+        .icon-item img {
+            width: 100%;
+            height: auto;
+            display: block; /* Remove qualquer espaço extra abaixo da imagem */
+        }
+    </style>
 </head>
-<body>
-    <nav class="navbar">
-        <a href="index.html" aria-label="Voltar para o início">Voltar para o Início</a>
-    </nav>
-    <main>
-        <h1>Gerenciar Perfil</h1>
-        <section class="profile-section">
-            <h2>Seu Perfil</h2>
-            <label for="user-name-input">Nome de Usuário</label>
-            <input id="user-name-input" type="text" aria-label="Nome de usuário">
-            <p>Status da Conta: <span id="account-status"></span></p>
-            <p>Expira em: <span id="account-expiration"></span></p>
-            <h3>Escolha seu Ícone</h3>
-            <div id="icon-selection-grid" class="icon-grid"></div>
-            <button id="save-profile-button" aria-label="Salvar perfil">Salvar Perfil</button>
-            <p id="profile-message"></p>
-        </section>
-        <section class="profile-section">
-            <h2>Alterar Senha</h2>
-            <div id="change-password-form">
-                <label for="current-password">Senha Atual</label>
-                <input id="current-password" type="password" aria-label="Senha atual">
-                <label for="new-password">Nova Senha</label>
-                <input id="new-password" type="password" aria-label="Nova senha">
-                <label for="confirm-password">Confirmar Nova Senha</label>
-                <input id="confirm-password" type="password" aria-label="Confirmar nova senha">
-                <button id="change-password-button" aria-label="Alterar senha">Alterar Senha</button>
-                <p id="password-message"></p>
+<body class="bg-gray-900 text-white">
+
+    <div class="navbar text-center">
+        <a href="index.html" class="text-blue-400 hover:underline">Voltar para o Início</a>
+    </div>
+
+    <div class="container mx-auto p-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8 text-center">Gerenciar Perfil</h1>
+
+        <!-- Profile General Settings -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Seu Perfil</h2>
+            
+            <div class="mb-4">
+                <label for="user-name-input" class="block text-sm font-medium text-gray-300 mb-2">Nome de Usuário</label>
+                <input type="text" id="user-name-input" placeholder="Digite seu nome de usuário" class="w-full bg-gray-700 text-white p-3 rounded-md">
             </div>
-        </section>
-    </main>
+
+            <div class="mb-4">
+                <p class="block text-sm font-medium text-gray-300 mb-2">Status da Conta: <span id="account-status" class="font-bold"></span></p>
+                <p class="block text-sm font-medium text-gray-300 mb-2">Expira em: <span id="account-expiration" class="font-bold"></span></p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-4 mt-6">Escolha seu Ícone</h3>
+            <div id="icon-selection-grid" class="icon-grid mb-4">
+                <!-- Icons will be populated by profile.js -->
+            </div>
+            
+            <button id="save-profile-button" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Salvar Perfil</button>
+            <p id="profile-message" class="text-center mt-2"></p>
+        </div>
+
+        <!-- Change Password -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">Alterar Senha</h2>
+            <form id="change-password-form" class="space-y-4">
+                <div>
+                    <label for="new-password" class="block text-sm font-medium text-gray-300">Nova Senha</label>
+                    <input type="password" id="new-password" placeholder="Digite a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-password" placeholder="Confirme a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Alterar Senha</button>
+                <p id="password-message" class="text-center mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="profile.js" type="module"></script>
+    <script type="module">
+        import { auth, onAuthStateChanged } from './firebase-init.js';
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
 </body>
 </html>
