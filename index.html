@@ -173,6 +173,10 @@
             display: block;
         }
     }
+    #modal-episodes li.active {
+        background-color: #e50914;
+        font-weight: bold;
+    }
   </style>
 </head>
 <body class="player-page">
@@ -302,7 +306,7 @@
   <script type="module">
     import { auth, onAuthStateChanged, signOut, db, ref, get, set, onValue } from './firebase-init.js';
 
-    const protectedPages = ['index.html', 'player-page.html', 'Player-TV.html', 'profile.html'];
+    const protectedPages = ['index.html', 'profile.html'];
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
     if (protectedPages.includes(currentPage)) {

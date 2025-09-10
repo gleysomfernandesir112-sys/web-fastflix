@@ -657,6 +657,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer';
                     li.textContent = episode.title || 'Sem Título';
                     li.addEventListener('click', () => {
+                        episodesList.querySelectorAll('li').forEach(item => item.classList.remove('active'));
+                        li.classList.add('active');
                         playVideoInModal(videoPlayer, episode.url);
                     });
                     episodesList.appendChild(li);
@@ -665,6 +667,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Play the first episode of the season by default
                 if (series.seasons[selectedSeason][0]) {
                     playVideoInModal(videoPlayer, series.seasons[selectedSeason][0].url);
+                    // Highlight the first episode
+                    episodesList.querySelector('li').classList.add('active');
                 }
             });
 
