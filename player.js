@@ -581,27 +581,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let hls = new Hls();
 
     function playVideoInModal(videoPlayer, url) {
-        if (url.endsWith('.m3u8')) {
-            if (Hls.isSupported()) {
-                hls.destroy();
-                const hlsConfig = {
-                    maxMaxBufferLength: 100,
-                };
-                hls = new Hls(hlsConfig);
-                hls.loadSource(url);
-                hls.attachMedia(videoPlayer);
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoPlayer.play();
-                });
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                videoPlayer.src = url;
-                videoPlayer.addEventListener('loadedmetadata', () => {
-                    videoPlayer.play();
-                });
-            }
-        } else { // For MP4 and other formats
+        if (Hls.isSupported()) {
+            hls.destroy();
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(videoPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                videoPlayer.play();
+            });
+        } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
             videoPlayer.src = url;
-            videoPlayer.play();
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                videoPlayer.play();
+            });
         }
     }
 
@@ -809,27 +801,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function playChannel(url) {
-            if (url.endsWith('.m3u8')) {
-                if (Hls.isSupported()) {
-                    hls.destroy();
-                    const hlsConfig = {
-                        maxMaxBufferLength: 100,
-                    };
-                    hls = new Hls(hlsConfig);
-                    hls.loadSource(url);
-                    hls.attachMedia(videoPlayer);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        videoPlayer.play();
-                    });
-                } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                    videoPlayer.src = url;
-                    videoPlayer.addEventListener('loadedmetadata', () => {
-                        videoPlayer.play();
-                    });
-                }
-            } else { // For MP4 and other formats
+            if (Hls.isSupported()) {
+                hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(videoPlayer);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoPlayer.play();
+                });
+            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                 videoPlayer.src = url;
-                videoPlayer.play();
+                videoPlayer.addEventListener('loadedmetadata', () => {
+                    videoPlayer.play();
+                });
             }
         }
 
