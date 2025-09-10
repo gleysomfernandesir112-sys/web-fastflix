@@ -44,41 +44,34 @@
         <h1 class="text-4xl font-bold mb-8 text-center">Gerenciar Perfil</h1>
 
         <!-- Profile General Settings -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-            <h2 class="text-2xl font-semibold mb-4">Seu Perfil</h2>
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg mb-8 text-center">
+            <h2 class="text-3xl font-bold mb-6">Configurações de Perfil</h2>
             
-            <div class="mb-4">
-                <label for="user-name-input" class="block text-sm font-medium text-gray-300 mb-2">Nome de Usuário</label>
-                <input type="text" id="user-name-input" placeholder="Digite seu nome de usuário" class="w-full bg-gray-700 text-white p-3 rounded-md">
-            </div>
-
-            <div class="mb-4">
-                <p class="block text-sm font-medium text-gray-300 mb-2">Status da Conta: <span id="account-status" class="font-bold"></span></p>
-                <p class="block text-sm font-medium text-gray-300 mb-2">Expira em: <span id="account-expiration" class="font-bold"></span></p>
+            <div class="mb-6">
+                <p class="text-lg font-medium text-gray-300 mb-2">Status da Conta: <span id="account-status" class="font-bold text-red-500"></span></p>
+                <p class="text-lg font-medium text-gray-300">Expira em: <span id="account-expiration" class="font-bold text-red-500"></span></p>
             </div>
 
             <h3 class="text-xl font-semibold mb-4 mt-6">Escolha seu Ícone</h3>
             <div id="icon-selection-grid" class="icon-grid mb-4">
                 <!-- Icons will be populated by profile.js -->
             </div>
-            
-            <button id="save-profile-button" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Salvar Perfil</button>
             <p id="profile-message" class="text-center mt-2"></p>
         </div>
 
         <!-- Change Password -->
-        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-semibold mb-4">Alterar Senha</h2>
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold mb-6 text-center">Alterar Senha</h2>
             <form id="change-password-form" class="space-y-4">
                 <div>
-                    <label for="new-password" class="block text-sm font-medium text-gray-300">Nova Senha</label>
-                    <input type="password" id="new-password" placeholder="Digite a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                    <label for="new-password" class="block text-lg font-medium text-gray-300 mb-2">Nova Senha</label>
+                    <input type="password" id="new-password" placeholder="Digite a nova senha" class="w-full bg-gray-700 text-white p-4 rounded-md text-lg" required>
                 </div>
                 <div>
-                    <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirmar Nova Senha</label>
-                    <input type="password" id="confirm-password" placeholder="Confirme a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                    <label for="confirm-password" class="block text-lg font-medium text-gray-300 mb-2">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-password" placeholder="Confirme a nova senha" class="w-full bg-gray-700 text-white p-4 rounded-md text-lg" required>
                 </div>
-                <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Alterar Senha</button>
+                <button type="submit" class="w-full bg-red-600 text-white font-bold py-4 px-4 rounded-md hover:bg-red-700 transition-colors text-lg">Alterar Senha</button>
                 <p id="password-message" class="text-center mt-2"></p>
             </form>
         </div>

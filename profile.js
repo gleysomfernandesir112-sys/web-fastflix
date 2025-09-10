@@ -18,8 +18,6 @@ async function getIconFiles() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const iconGrid = document.getElementById('icon-selection-grid');
-    const userNameInput = document.getElementById('user-name-input');
-    const saveProfileButton = document.getElementById('save-profile-button');
     const profileMessage = document.getElementById('profile-message');
     const passwordForm = document.getElementById('change-password-form');
     const passwordMessage = document.getElementById('password-message');
@@ -104,47 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, 500);
 
-                userNameInput.value = (userData.name || user.email.split('@')[0]);
-            }
+                }
         } else {
             window.location.href = 'login.html';
         }
     });
 
-    // Salva o novo ícone e nome de usuário
-    saveProfileButton.addEventListener('click', async () => {
-        if (!currentUser) {
-            profileMessage.textContent = 'Usuário não encontrado.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
-            return;
-        }
-
-        const newName = userNameInput.value.trim();
-        if (!newName) {
-            profileMessage.textContent = 'O nome de usuário não pode estar vazio.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
-            return;
-        }
-
-        const userRef = ref(db, 'users/' + currentUser.uid);
-        try {
-            const updates = {
-                name: newName
-            };
-            if (selectedIconName) {
-                updates.profileIcon = selectedIconName;
-            }
-            
-            await set(userRef, updates, { merge: true });
-
-            profileMessage.textContent = 'Perfil salvo com sucesso!';
-            profileMessage.className = 'text-green-400 text-center mt-2';
-        } catch (error) {
-            console.error("Erro ao atualizar o perfil:", error);
-            profileMessage.textContent = 'Erro ao salvar o perfil. Tente novamente.';
-            profileMessage.className = 'text-red-400 text-center mt-2';
-        }
-    });
+    
 
     // Lida com a alteração de senha
     passwordForm.addEventListener('submit', async (e) => {
