@@ -24,6 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    function checkProtocolAndWarn() {
+        if (!hasSeenProtocolWarning) {
+        protocolWarningPopup.style.display = 'flex';
+    }
+    }
+
     // Função para buscar capa da série via Kitsu API
     async function fetchSeriesPoster(seriesName) {
         // Verificar cache primeiro
@@ -759,6 +765,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 initTvPlayer();
                 tvPlayerInitialized = true;
             }
+            checkProtocolAndWarn();
         } else {
             mainContent.style.display = 'block';
             navbar.style.display = 'flex';
