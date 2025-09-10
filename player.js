@@ -542,10 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
-            const url = 'player-page.html?videoUrl=' + encodeURIComponent(item.url);
-            if (debounceNavigation(url)) {
-                window.location.href = url;
-            }
+            openMoviePlayerModal(item.url);
         });
         return div;
     }
@@ -554,7 +551,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
         
-        // Buscar capa da série
         let posterUrl = item.logo || await fetchSeriesPoster(item.displayName);
         
         div.innerHTML = `
@@ -563,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
-            openSeriesModal(item);
+            openSeriesPlayerModal(item);
         });
         return div;
     }
@@ -577,12 +573,107 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
-            const url = 'player-page.html?videoUrl=' + encodeURIComponent(item.url);
-            if (debounceNavigation(url)) {
-                window.location.href = url;
-            }
+            openMoviePlayerModal(item.url);
         });
         return div;
+    }
+
+    let hls = new Hls();
+
+    function playVideoInModal(videoPlayer, url) {
+        if (Hls.isSupported()) {
+            hls.destroy();
+            hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(videoPlayer);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                videoPlayer.play();
+            });
+        } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+            videoPlayer.src = url;
+            videoPlayer.addEventListener('loadedmetadata', () => {
+                videoPlayer.play();
+            });
+        }
+    }
+
+    window.openMoviePlayerModal = function(url) {
+        const modal = document.getElementById('movie-player-modal');
+        const videoPlayer = document.getElementById('movieVideoPlayer');
+        playVideoInModal(videoPlayer, url);
+        modal.style.display = 'flex';
+    }
+
+    window.closeMoviePlayerModal = function() {
+        const modal = document.getElementById('movie-player-modal');
+        const videoPlayer = document.getElementById('movieVideoPlayer');
+        videoPlayer.pause();
+        videoPlayer.src = '';
+        hls.destroy();
+        modal.style.display = 'none';
+    }
+
+    window.openSeriesPlayerModal = function(series) {
+        const modal = document.getElementById('series-player-modal');
+        const videoPlayer = document.getElementById('seriesVideoPlayer');
+        const modalTitle = document.getElementById('series-modal-title');
+        const seasonSelectorContainer = document.getElementById('season-selector');
+        const episodesContainer = document.getElementById('modal-episodes');
+        
+        modalTitle.textContent = series.displayName || 'Sem Título';
+        seasonSelectorContainer.innerHTML = '';
+        episodesContainer.innerHTML = '';
+
+        if (!series.seasons || Object.keys(series.seasons).length === 0) {
+            episodesContainer.innerHTML = '<p class="text-red-500">Nenhum episódio encontrado para esta série.</p>';
+        } else {
+            const sortedSeasons = Object.keys(series.seasons).sort((a, b) => a - b);
+
+            const select = document.createElement('select');
+            select.className = 'w-full bg-gray-700 text-white p-2 rounded-md';
+
+            sortedSeasons.forEach(seasonNumber => {
+                const option = document.createElement('option');
+                option.value = seasonNumber;
+                option.textContent = `Temporada ${seasonNumber}`;
+                select.appendChild(option);
+            });
+
+            select.addEventListener('change', () => {
+                const selectedSeason = select.value;
+                episodesContainer.innerHTML = '';
+                const episodesList = document.createElement('ul');
+                episodesList.className = 'space-y-2';
+                series.seasons[selectedSeason].forEach(episode => {
+                    const li = document.createElement('li');
+                    li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer';
+                    li.textContent = episode.title || 'Sem Título';
+                    li.addEventListener('click', () => {
+                        playVideoInModal(videoPlayer, episode.url);
+                    });
+                    episodesList.appendChild(li);
+                });
+                episodesContainer.appendChild(episodesList);
+                // Play the first episode of the season by default
+                if (series.seasons[selectedSeason][0]) {
+                    playVideoInModal(videoPlayer, series.seasons[selectedSeason][0].url);
+                }
+            });
+
+            seasonSelectorContainer.appendChild(select);
+            select.dispatchEvent(new Event('change'));
+        }
+
+        modal.classList.add('show');
+    }
+
+    window.closeSeriesPlayerModal = function() {
+        const modal = document.getElementById('series-player-modal');
+        const videoPlayer = document.getElementById('seriesVideoPlayer');
+        videoPlayer.pause();
+        videoPlayer.src = '';
+        hls.destroy();
+        modal.classList.remove('show');
     }
 
     function displayPaginatedList(categoryId, items, createItemElement) {
@@ -638,84 +729,102 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPage(currentPage);
     }
 
+    let tvPlayerInitialized = false;
+
     window.switchTab = function(tab) {
-        currentTab = tab;
-        currentSubcat = 'all';
-        document.querySelectorAll('.navbar a, .navbar div').forEach(a => a.classList.remove('active'));
-        const tabElement = document.getElementById(`${tab}-tab`);
-        if (tabElement) tabElement.classList.add('active');
-        document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
-        const categoryElement = document.getElementById(`${tab}-category`);
-        if (categoryElement) categoryElement.classList.add('active');
-        displayChannels(document.getElementById('search')?.value || '');
-    }
+        const mainContent = document.querySelector('.max-w-6xl.mx-auto.p-4');
+        const tvPlayerContainer = document.getElementById('tv-player-container');
+        const navbar = document.getElementById('main-nav');
 
-    window.openSeriesModal = function(series) {
-        const modal = document.getElementById('series-modal');
-        if (!modal) {
-            console.error('Modal de séries não encontrado');
-            return;
-        }
-        const modalTitle = document.getElementById('modal-title');
-        const seasonSelectorContainer = document.getElementById('season-selector');
-        const episodesContainer = document.getElementById('modal-episodes');
-        
-        if (modalTitle) modalTitle.textContent = series.displayName || 'Sem Título';
-        if (seasonSelectorContainer) seasonSelectorContainer.innerHTML = '';
-        if (episodesContainer) episodesContainer.innerHTML = '';
-
-        if (!series.seasons || Object.keys(series.seasons).length === 0) {
-            if (episodesContainer) {
-                episodesContainer.innerHTML = '<p class="text-red-500">Nenhum episódio encontrado para esta série.</p>';
+        if (tab === 'tv') {
+            mainContent.style.display = 'none';
+            navbar.style.display = 'none';
+            tvPlayerContainer.style.display = 'block';
+            if (!tvPlayerInitialized) {
+                initTvPlayer();
+                tvPlayerInitialized = true;
             }
         } else {
-            const sortedSeasons = Object.keys(series.seasons).sort((a, b) => a - b);
+            mainContent.style.display = 'block';
+            navbar.style.display = 'flex';
+            tvPlayerContainer.style.display = 'none';
+            
+            currentTab = tab;
+            currentSubcat = 'all';
+            document.querySelectorAll('.navbar a, .navbar div').forEach(a => a.classList.remove('active'));
+            const tabElement = document.getElementById(`${tab}-tab`);
+            if (tabElement) tabElement.classList.add('active');
+            document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+            const categoryElement = document.getElementById(`${tab}-category`);
+            if (categoryElement) categoryElement.classList.add('active');
+            displayChannels(document.getElementById('search')?.value || '');
+        }
+    }
 
-            const select = document.createElement('select');
-            select.className = 'w-full bg-gray-700 text-white p-2 rounded-md';
+    function initTvPlayer() {
+        const videoPlayer = document.getElementById('tvPlayer');
+        const channelList = document.getElementById('channel-list-tv');
+        const searchInput = document.getElementById('channel-search-tv');
+        let hls = new Hls();
+        let allTvChannels = [];
 
-            sortedSeasons.forEach(seasonNumber => {
-                const option = document.createElement('option');
-                option.value = seasonNumber;
-                option.textContent = `Temporada ${seasonNumber}`;
-                select.appendChild(option);
-            });
-
-            select.addEventListener('change', () => {
-                const selectedSeason = select.value;
-                if (episodesContainer) episodesContainer.innerHTML = '';
-                const episodesList = document.createElement('ul');
-                episodesList.className = 'space-y-2';
-                if (series.seasons[selectedSeason]) {
-                    series.seasons[selectedSeason].forEach(episode => {
-                        const li = document.createElement('li');
-                        li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer';
-                        li.textContent = episode.title || 'Sem Título';
-                        li.addEventListener('click', () => {
-                            sessionStorage.setItem('currentSeries', JSON.stringify(series));
-                            sessionStorage.setItem('currentSeason', selectedSeason);
-                            const url = 'player-page.html?videoUrl=' + encodeURIComponent(episode.url);
-                            if (debounceNavigation(url)) {
-                                window.location.href = url;
-                            }
-                        });
-                        episodesList.appendChild(li);
-                    });
-                }
-                if (episodesContainer) episodesContainer.appendChild(episodesList);
-            });
-
-            if (seasonSelectorContainer) seasonSelectorContainer.appendChild(select);
-            select.dispatchEvent(new Event('change'));
+        for (let sub in allChannels.tv) {
+            if (Array.isArray(allChannels.tv[sub])) {
+                allTvChannels = allTvChannels.concat(allChannels.tv[sub]);
+            }
         }
 
-        modal.classList.add('show');
+        function renderChannels(filter = '') {
+            const lowerFilter = filter.toLowerCase();
+            channelList.innerHTML = '';
+            const filteredChannels = allTvChannels.filter(channel => channel.title.toLowerCase().includes(lowerFilter));
+
+            if (filteredChannels.length === 0) {
+                channelList.innerHTML = '<li class="text-gray-400">Nenhum canal encontrado.</li>';
+                return;
+            }
+
+            filteredChannels.forEach(channel => {
+                const li = document.createElement('li');
+                li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer flex items-center';
+                li.innerHTML = `
+                    <img src="${channel.logo || 'https://via.placeholder.com/50x50?text=TV'}" alt="${channel.title}" class="w-10 h-10 mr-4">
+                    <span>${normalizeTitle(channel.title)}</span>
+                `;
+                li.addEventListener('click', () => {
+                    playChannel(channel.url);
+                    document.querySelectorAll('#channel-list-tv li.active').forEach(el => el.classList.remove('active'));
+                    li.classList.add('active');
+                });
+                channelList.appendChild(li);
+            });
+        }
+
+        function playChannel(url) {
+            if (Hls.isSupported()) {
+                hls.destroy();
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(videoPlayer);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoPlayer.play();
+                });
+            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                videoPlayer.src = url;
+                videoPlayer.addEventListener('loadedmetadata', () => {
+                    videoPlayer.play();
+                });
+            }
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            renderChannels(e.target.value);
+        });
+
+        renderChannels();
     }
 
-    window.closeModal = function() {
-        const modal = document.getElementById('series-modal');
-        if (modal) modal.classList.remove('show');
-    }
+    
 
     const searchInput = document.getElementById('search');
     if (searchInput) {

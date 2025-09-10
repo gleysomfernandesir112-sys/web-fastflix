@@ -96,6 +96,49 @@
         display: none;
     }
     }
+      /* Estilos específicos para a página de TV */
+    .tv-container {
+      display: flex;
+      height: 100vh;
+      flex-direction: row;
+    }
+    .video-main {
+      flex-grow: 1;
+      background-color: #000;
+    }
+    #channel-list-sidebar {
+      width: 320px;
+      background-color: #1f1f1f;
+      padding: 1rem;
+      overflow-y: auto;
+      border-left: 1px solid #333;
+    }
+    #channel-list-sidebar ul li {
+      padding: 0.75rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #channel-list-sidebar ul li:hover, #channel-list-sidebar ul li.active {
+      background-color: #e50914;
+    }
+    @media (max-width: 768px) {
+      .tv-container {
+        flex-direction: column;
+      }
+      #channel-list-sidebar {
+        width: 100%;
+        height: 50%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 30;
+      }
+      #channel-list-sidebar.show {
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body class="player-page">
@@ -119,7 +162,7 @@
       <a href="#" onclick="switchTab('filmes')" id="filmes-tab" class="active">Filmes</a>
       <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
       <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
-      <a href="Player-TV.html" id="tv-tab">TV ao Vivo</a>
+      <a href="#" onclick="switchTab('tv')" id="tv-tab">TV ao Vivo</a>
       <!-- Botões mobile -->
       <!-- Botões mobile -->
     </div>
@@ -170,23 +213,47 @@
     </div>
   </div>
 
-  <!-- Modal de Séries -->
-  <div id="series-modal" class="modal">
-    <div class="modal-content">
-      <h2 id="modal-title" class="text-2xl font-bold mb-4"></h2>
-      <div id="season-selector" class="mb-4"></div>
-      <div id="modal-episodes" class="max-h-80 overflow-y-auto"></div>
-      <button onclick="closeModal()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Fechar</button>
+  <!-- TV Player Container -->
+  <div id="tv-player-container" style="display: none;">
+    <div class="tv-container">
+      <div class="video-main">
+        <div class="video-container" style="height:100vh;">
+          <a href="#" onclick="switchTab('filmes')" class="back-button">Voltar</a>
+          <video id="tvPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+        </div>
+      </div>
+      <aside id="channel-list-sidebar">
+        <h3 class="text-lg font-bold mb-4">Canais ao Vivo</h3>
+        <input type="text" id="channel-search-tv" placeholder="Buscar canal..." class="w-full p-2 bg-gray-700 rounded mb-4">
+        <ul id="channel-list-tv" class="space-y-2" style="max-height: calc(100vh - 120px); overflow-y: auto;">
+          <!-- Lista de canais será populada via JS -->
+          <li class="text-gray-400">Carregando canais...</li>
+        </ul>
+      </aside>
     </div>
   </div>
 
-  <!-- Player Modal -->
-  <div id="player-modal" class="modal" style="display: none; background-color: black; align-items: center; justify-content: center;">
-    <div class="video-container" style="width: 100%; height: 100%; max-width: none; max-height: none;">
-      <a href="#" onclick="closePlayerModal()" class="back-button">Voltar</a>
-      <video id="modalVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+  <!-- Series Player Modal -->
+  <div id="series-player-modal" class="modal">
+    <div class="modal-content" style="display: flex; flex-direction: column; max-width: 80vw; max-height: 80vh; width: 100%; height: 100%; padding: 0; background-color: #1f1f1f;">
+        <div class="video-container" style="width: 100%; height: 60%; background-color: black; position: relative;">
+            <video id="seriesVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+            <a href="#" onclick="closeSeriesPlayerModal()" class="back-button" style="position: absolute; top: 1rem; left: 1rem; z-index: 1;">Voltar</a>
+        </div>
+        <div class="episodes-container" style="width: 100%; height: 40%; padding: 1rem; overflow-y: auto;">
+            <h2 id="series-modal-title" class="text-2xl font-bold mb-4"></h2>
+            <div id="season-selector" class="mb-4"></div>
+            <div id="modal-episodes" class="overflow-y-auto" style="max-height: calc(100% - 100px);"></div>
+        </div>
     </div>
-    <p id="modalErrorMessage" class="error-message" style="display:none; position: absolute; bottom: 20px;"></p>
+  </div>
+
+  <!-- Movie Player Modal -->
+  <div id="movie-player-modal" class="modal" style="background-color: black;">
+    <div class="video-container" style="width: 100%; height: 100%;">
+      <a href="#" onclick="closeMoviePlayerModal()" class="back-button">Voltar</a>
+      <video id="movieVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+    </div>
   </div>
 
   <!-- Expired Account Modal -->
