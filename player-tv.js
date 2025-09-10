@@ -1,4 +1,4 @@
-import { db, ref, get } from './firebase-init.js';
+import { loadM3UData } from './m3u-loader.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const videoPlayer = document.getElementById('tvPlayer');
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             channelListUl.appendChild(li);
 
-            // Auto-play the first channel
             if (index === 0 && !filter) {
                 li.click();
             }
@@ -52,24 +51,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderChannelList(searchInput.value);
     });
 
-    // A lógica para carregar canais de TV precisa ser adaptada.
-    // Por enquanto, vamos usar um placeholder ou buscar do player.js se possível.
-    // Idealmente, a lógica de parsing do M3U seria movida para um módulo compartilhado.
-    // Como um passo inicial, vamos assumir que os canais estão em `sessionStorage` ou faremos um fetch.
-    
-    // Esta é uma simplificação. A lógica completa do player.js deve ser refatorada
-    // para que `allChannels` seja acessível globalmente ou por módulos.
-    const cachedData = localStorage.getItem('m3u_data');
-    if (cachedData) {
-        const { data } = JSON.parse(cachedData);
+    try {
+        const data = await loadM3UData();
         if (data.tv) {
-            // Flatten all tv channels from all subcategories into one list
-            channels = Object.values(data.tv).flat();
+            channels = Object.values(data.tv).flat().sort((a, b) => a.title.localeCompare(b.title));
             renderChannelList();
         } else {
-            channelListUl.innerHTML = '<li class="text-red-500">Nenhuma categoria de TV encontrada no cache.</li>';
+            channelListUl.innerHTML = '<li class="text-red-500">Nenhuma categoria de TV encontrada.</li>';
         }
-    } else {
-        channelListUl.innerHTML = '<li class="text-red-500">Cache de canais não encontrado. Por favor, carregue a página inicial primeiro.</li>';
+    } catch (error) {
+        console.error('Failed to load TV channels:', error);
+        channelListUl.innerHTML = `<li class="text-red-500">Erro ao carregar canais: ${error.message}</li>`;
     }
 });
