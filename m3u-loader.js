@@ -200,7 +200,9 @@ export async function loadM3UData() {
 
     for (const filePath of filePaths) {
         try {
-            const response = await fetch(filePath);
+            const response = await fetch(filePath, {
+                headers: { 'Accept': 'text/plain,*/*' }
+            });
             if (response.ok) {
                 content = await response.text();
                 break;
@@ -212,9 +214,29 @@ export async function loadM3UData() {
 
     if (!content) {
         try {
-            const response = await fetch(fallbackUrl);
+            const response = await fetch(fallbackUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0',
+                    'Accept': 'text/plain,*/*',
+                    'Referer': 'http://localhost'
+                }
+            });
             if (response.ok) {
                 content = await response.text();
+            } else {
+                const httpFallbackUrl = fallbackUrl.replace('https://', 'http://');
+                const httpResponse = await fetch(httpFallbackUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0',
+                        'Accept': 'text/plain,*/*',
+                        'Referer': 'http://localhost'
+                    }
+                });
+                if (httpResponse.ok) {
+                    content = await httpResponse.text();
+                } else {
+                     console.error(`Failed to load fallback URL: ${fallbackUrl}`, response.status);
+                }
             }
         } catch (error) {
             console.error(`Failed to load fallback URL:`, error.message);
