@@ -8,7 +8,7 @@ function parseM3UInWorker(content) {
             self.onmessage = function(e) {
                 try {
                     var content = e.data;
-                    var lines = content.split("\n");
+                    var lines = content.split('\n');
                     var allChannels = { filmes: {}, series: {}, tv: {} };
                     var currentChannel = null;
 
@@ -107,9 +107,9 @@ function parseM3UInWorker(content) {
                         var line = lines[i].trim();
                         try {
                             if (line.startsWith("#EXTINF:")) {
-                                var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name=\"([^\"]+)\"/i);
-                                var groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
-                                var logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
+                                var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name="([^"]+)"/i);
+                                var groupMatch = line.match(/group-title="([^"]+)"/i);
+                                var logoMatch = line.match(/tvg-logo="([^"]+)"/i);
                                 var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
                                 currentChannel = {
                                     title: title,
@@ -122,7 +122,8 @@ function parseM3UInWorker(content) {
                                 categorizeChannel(currentChannel);
                                 currentChannel = null;
                             }
-                        } catch (error) {
+                        }
+                        catch (error) {
                             console.error("Erro ao processar linha", i, ":", line, error);
                             currentChannel = null;
                         }
@@ -176,7 +177,7 @@ export async function loadM3UData() {
         return allChannels;
     }
 
-    const cacheKey = `m3u_data`;
+    const cacheKey = 'm3u_data';
     const cached = localStorage.getItem(cacheKey);
 
     if (cached) {
@@ -192,55 +193,18 @@ export async function loadM3UData() {
         }
     }
 
-    const filePaths = [
-        'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u'
-    ];
-    const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
+    const m3uUrl = 'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u';
     let content = null;
 
-    for (const filePath of filePaths) {
-        try {
-            const response = await fetch(filePath, {
-                headers: { 'Accept': 'text/plain,*/*' }
-            });
-            if (response.ok) {
-                content = await response.text();
-                break;
-            }
-        } catch (error) {
-            console.error(`Failed to load ${filePath}:`, error.message);
+    try {
+        const response = await fetch(m3uUrl, {
+            headers: { 'Accept': 'text/plain,*/*' }
+        });
+        if (response.ok) {
+            content = await response.text();
         }
-    }
-
-    if (!content) {
-        try {
-            const response = await fetch(fallbackUrl, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0',
-                    'Accept': 'text/plain,*/*',
-                    'Referer': 'http://localhost'
-                }
-            });
-            if (response.ok) {
-                content = await response.text();
-            } else {
-                const httpFallbackUrl = fallbackUrl.replace('https://', 'http://');
-                const httpResponse = await fetch(httpFallbackUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0',
-                        'Accept': 'text/plain,*/*',
-                        'Referer': 'http://localhost'
-                    }
-                });
-                if (httpResponse.ok) {
-                    content = await httpResponse.text();
-                } else {
-                     console.error(`Failed to load fallback URL: ${fallbackUrl}`, response.status);
-                }
-            }
-        } catch (error) {
-            console.error(`Failed to load fallback URL:`, error.message);
-        }
+    } catch (error) {
+        console.error(`Failed to load ${m3uUrl}:`, error.message);
     }
 
     if (content) {
@@ -254,6 +218,6 @@ export async function loadM3UData() {
             throw new Error('Failed to process M3U list.');
         }
     } else {
-        throw new Error('Failed to load M3U list from all sources.');
+        throw new Error('Failed to load M3U list from the specified source.');
     }
 }
