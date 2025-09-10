@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player de Série - FastFlix</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .episode-controls {
+      position: absolute;
+      bottom: 80px; /* Ajustar conforme a altura dos controles do video */
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 1rem;
+      z-index: 21;
+    }
+    .episode-controls button {
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 1px solid #fff;
+      color: #fff;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      font-size: 1.5rem;
+    }
+     .episode-controls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <div class="video-main">
+      <div class="video-container">
+        <a href="index.html" class="back-button">Voltar</a>
+        <video id="videoPlayer" controls autoplay></video>
+        <div class="episode-controls">
+          <button id="prev-episode"><i class="fas fa-backward"></i></button>
+          <button id="next-episode"><i class="fas fa-forward"></i></button>
+        </div>
+        <button class="episode-toggle-button">Episódios</button>
+      </div>
+    </div>
+    <div id="episode-sidebar">
+      <h3 id="series-title" class="text-lg font-bold mb-4"></h3>
+      <div id="season-selector" class="mb-4"></div>
+      <ul id="episode-list" class="space-y-2">
+        <!-- Episodes will be populated by javascript -->
+      </ul>
+    </div>
+  </div>
+
+  <script type="module" src="player-series.js"></script>
+</body>
+</html>

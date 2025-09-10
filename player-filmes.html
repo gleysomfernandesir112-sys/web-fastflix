@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Player de Filme - FastFlix</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-black">
+  <div class="video-container" style="height:100vh;">
+    <a href="index.html" class="back-button">Voltar</a>
+    <video id="videoPlayer" controls autoplay style="width: 100%; height: 100%; object-fit: contain;"></video>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const videoPlayer = document.getElementById('videoPlayer');
+      const urlParams = new URLSearchParams(window.location.search);
+      const videoUrl = urlParams.get('videoUrl');
+
+      if (videoUrl) {
+        if (Hls.isSupported() && videoUrl.includes('.m3u8')) {
+          const hls = new Hls();
+          hls.loadSource(videoUrl);
+          hls.attachMedia(videoPlayer);
+        } else {
+          videoPlayer.src = videoUrl;
+        }
+        videoPlayer.play();
+      }
+    });
+  </script>
+</body>
+</html>

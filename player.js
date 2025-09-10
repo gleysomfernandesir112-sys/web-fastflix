@@ -541,7 +541,11 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
-            openSeriesModal(item);
+            sessionStorage.setItem('currentSeries', JSON.stringify(item));
+            const url = 'player-series.html';
+            if (debounceNavigation(url)) {
+                window.location.href = url;
+            }
         });
         return div;
     }
@@ -554,13 +558,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <img src="${item.logo || 'https://via.placeholder.com/200x300?text=TV'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover" loading="lazy">
             <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}${item.isLive ? ' <span class="text-red-500">(Ao Vivo)</span>' : ''}</p>
         `;
-        div.addEventListener('click', (e) => {
-            e.preventDefault();
-            const url = 'player-page.html?videoUrl=' + encodeURIComponent(item.url);
-            if (debounceNavigation(url)) {
-                window.location.href = url;
-            }
-        });
+        // A ação de clique foi removida, pois a aba principal agora leva para a página de TV.
+        div.style.cursor = 'default'; 
         return div;
     }
 
