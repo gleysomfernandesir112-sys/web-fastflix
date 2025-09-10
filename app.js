@@ -231,11 +231,12 @@ function handleLoginPage() {
     const loginForm = document.getElementById('login-form');
     const errorMessage = document.getElementById('error-message');
     const rememberMeCheckbox = document.getElementById('remember-me');
-    if (!loginForm || !errorMessage || !rememberMeCheckbox) return;
+    const loginButton = document.getElementById('login-button');
+    if (!loginForm || !errorMessage || !rememberMeCheckbox || !loginButton) return;
     onAuthStateChanged(auth, (user) => {
         if (user) window.location.href = 'index.html';
     });
-    loginForm.addEventListener('submit', async (e) => {
+    loginButton.addEventListener('click', async (e) => {
         e.preventDefault();
         errorMessage.textContent = '';
         const usernameInput = document.getElementById('username');
@@ -309,6 +310,7 @@ async function handleProfilePage() {
     const profileMessage = document.getElementById('profile-message');
     const passwordForm = document.getElementById('change-password-form');
     const passwordMessage = document.getElementById('password-message');
+    const changePasswordButton = document.getElementById('change-password-button');
     let currentUser = null;
     let selectedIconName = null;
 
@@ -397,7 +399,7 @@ async function handleProfilePage() {
         }
     });
 
-    passwordForm?.addEventListener('submit', async (e) => {
+    changePasswordButton?.addEventListener('click', async (e) => {
         e.preventDefault();
         passwordMessage.textContent = '';
         const newPassword = document.getElementById('new-password').value;
@@ -418,7 +420,7 @@ async function handleProfilePage() {
             await updatePassword(currentUser, newPassword);
             passwordMessage.textContent = 'Senha alterada com sucesso!';
             passwordMessage.className = 'text-green-400 text-center mt-2';
-            passwordForm.reset();
+            document.getElementById('change-password-form').reset();
         } catch (error) {
             passwordMessage.textContent = 'Erro ao alterar a senha. Verifique a senha atual.';
             passwordMessage.className = 'text-red-400 text-center mt-2';
@@ -702,33 +704,51 @@ async function displayChannels(searchQuery = '') {
     renderPage(currentPage);
 }
 
-window.toggleDropdown = function() {
-    const dropdown = document.querySelector('.profile-dropdown');
-    if (dropdown) {
-        dropdown.classList.toggle('active');
-        dropdown.setAttribute('aria-expanded', dropdown.classList.contains('active'));
+function setupEventListeners() {
+    const profileButton = document.getElementById('profile-button');
+    if (profileButton) {
+        profileButton.addEventListener('click', () => {
+            const dropdown = document.querySelector('.profile-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+                dropdown.setAttribute('aria-expanded', dropdown.classList.contains('active'));
+            }
+        });
     }
+
+    const filmesTab = document.getElementById('filmes-tab');
+    const seriesTab = document.getElementById('series-tab');
+    const tvTab = document.getElementById('tv-tab');
+    if (filmesTab) filmesTab.addEventListener('click', () => window.switchTab('filmes'));
+    if (seriesTab) seriesTab.addEventListener('click', () => window.switchTab('series'));
+    if (tvTab) tvTab.addEventListener('click', () => window.switchTab('tv'));
+
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => displayChannels(searchInput.value));
+    }
+
+    const categoryFilter = document.getElementById('category-filter');
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', (e) => {
+            currentSubcat = e.target.value;
+            displayChannels(document.getElementById('search')?.value || '');
+        });
+    }
+
+    const closeModalButton = document.getElementById('close-modal');
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', closeModal);
+    }
+
+    document.addEventListener('click', (event) => {
+        const dropdown = document.querySelector('.profile-dropdown');
+        if (dropdown && !dropdown.contains(event.target) && !document.getElementById('profile-button')?.contains(event.target)) {
+            dropdown.classList.remove('active');
+            dropdown.setAttribute('aria-expanded', 'false');
+        }
+    });
 }
-
-window.addEventListener('click', (event) => {
-    const dropdown = document.querySelector('.profile-dropdown');
-    if (dropdown && !dropdown.contains(event.target)) {
-        dropdown.classList.remove('active');
-        dropdown.setAttribute('aria-expanded', 'false');
-    }
-});
-
-window.switchTab = function(tab) {
-    currentTab = tab;
-    currentSubcat = 'all';
-    document.querySelectorAll('.navbar a, .navbar div').forEach(a => a.classList.remove('active'));
-    const tabElement = document.getElementById(`${tab}-tab`);
-    if (tabElement) tabElement.classList.add('active');
-    document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
-    const categoryElement = document.getElementById(`${tab}-category`);
-    if (categoryElement) categoryElement.classList.add('active');
-    displayChannels(document.getElementById('search')?.value || '');
-};
 
 document.addEventListener('DOMContentLoaded', () => {
     const currentPage = window.location.pathname.split('/').pop() || 'index.html';
@@ -740,19 +760,5 @@ document.addEventListener('DOMContentLoaded', () => {
         handleProtectedPage();
         initializeMain();
     }
-    const searchInput = document.getElementById('search');
-    if (searchInput) {
-        searchInput.addEventListener('input', () => displayChannels(searchInput.value));
-    }
-    const categoryFilter = document.getElementById('category-filter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', (e) => {
-            currentSubcat = e.target.value;
-            displayChannels(document.getElementById('search')?.value || '');
-        });
-    }
-    const closeModalButton = document.getElementById('close-modal');
-    if (closeModalButton) {
-        closeModalButton.addEventListener('click', closeModal);
-    }
+    setupEventListeners();
 });

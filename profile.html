@@ -42,6 +42,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' https://cdn.tailwindcss.com https://www.gstatic.com;
+        style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com;
+        font-src https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self' https://fasthub-9a206-default-rtdb.firebaseio.com;
+    ">
     <title>FastFlix - Perfil</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" src="app.js"></script>
@@ -75,7 +83,7 @@
                 <input id="new-password" type="password" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Nova senha">
                 <label for="confirm-password" class="block mb-2">Confirmar Nova Senha</label>
                 <input id="confirm-password" type="password" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Confirmar nova senha">
-                <button type="button" onclick="document.getElementById('change-password-form').dispatchEvent(new Event('submit'))" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" aria-label="Alterar senha">Alterar Senha</button>
+                <button id="change-password-button" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700" aria-label="Alterar senha">Alterar Senha</button>
                 <p id="password-message" class="mt-2"></p>
             </div>
         </section>
