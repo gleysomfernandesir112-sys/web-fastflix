@@ -601,7 +601,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('movie-player-modal');
         const videoPlayer = document.getElementById('movieVideoPlayer');
         playVideoInModal(videoPlayer, url);
-        modal.style.display = 'flex';
+        modal.classList.add('show');
     }
 
     window.closeMoviePlayerModal = function() {
@@ -610,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
         videoPlayer.pause();
         videoPlayer.src = '';
         hls.destroy();
-        modal.style.display = 'none';
+        modal.classList.remove('show');
     }
 
     window.openSeriesPlayerModal = function(series) {
@@ -819,6 +819,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         searchInput.addEventListener('input', (e) => {
             renderChannels(e.target.value);
+        });
+
+        const toggleButton = document.getElementById('toggle-channels-btn');
+        toggleButton.addEventListener('click', () => {
+            document.getElementById('channel-list-sidebar').classList.toggle('show');
         });
 
         renderChannels();
