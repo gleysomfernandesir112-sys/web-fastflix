@@ -1,7 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<<<<<<< HEAD
+<html><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FastFlix</title>
@@ -12,12 +9,6 @@
   <style>
     body { visibility: hidden; }
 
-    /* Estilos Gerais */
-    .max-w-6xl {
-        padding: 1rem;
-    }
-
-    /* Navbar */
     .navbar {
       display: flex;
       align-items: center;
@@ -27,11 +18,34 @@
       color: white;
       position: relative;
     }
-    .logo { font-size: 1.5rem; font-weight: bold; }
-    .hamburger { display: none; font-size: 1.5rem; cursor: pointer; }
-    .profile-section-desktop { display: flex; align-items: center; }
-    .profile-dropdown { position: relative; }
-    .profile-info { display: flex; align-items: center; cursor: pointer; padding: 5px 10px; }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .profile-section-desktop {
+      display: flex;
+      align-items: center;
+    }
+
+    .profile-dropdown {
+      position: relative;
+    }
+
+    .profile-info {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 5px 10px;
+    }
+
     .dropdown-content {
       display: none;
       position: absolute;
@@ -45,97 +59,116 @@
       top: 100%;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     }
-    .dropdown-content a { display: flex; align-items: center; text-decoration: none; color: #fff; padding: 8px 12px; }
-    .dropdown-content a:hover { background-color: #333; }
 
-    /* TV Player */
-    .tv-container { display: flex; height: 100vh; flex-direction: row; }
-    .video-main { flex-grow: 1; background-color: #000; }
-    #channel-list-sidebar { width: 320px; background-color: #1f1f1f; padding: 1rem; overflow-y: auto; border-left: 1px solid #333; }
-    #channel-list-sidebar ul li { padding: 0.75rem; cursor: pointer; border-radius: 4px; }
-    #channel-list-sidebar ul li:hover, #channel-list-sidebar ul li.active { background-color: #e50914; }
-    .episode-toggle-button {
+    .dropdown-content a {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #fff;
+      padding: 8px 12px;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #333;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+    .hamburger {
+        display: block;
+    }
+    .logo {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    .profile-section-desktop {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Ocultar user-name no mobile */
+    #user-name {
         display: none;
+    }
+    }
+      /* Estilos específicos para a página de TV */
+    .tv-container {
+      display: flex;
+      height: 100vh;
+      flex-direction: row;
+    }
+    .video-main {
+      flex-grow: 1;
+      background-color: #000;
+    }
+    #channel-list-sidebar {
+      width: 320px;
+      background-color: #1f1f1f;
+      padding: 1rem;
+      overflow-y: auto;
+      border-left: 1px solid #333;
+    }
+    #channel-list-sidebar ul li {
+      padding: 0.75rem;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    #channel-list-sidebar ul li:hover, #channel-list-sidebar ul li.active {
+      background-color: #e50914;
+    }
+    @media (max-width: 768px) {
+      .max-w-6xl.mx-auto.p-4 {
+          padding: 1rem;
+      }
+      #search, #category-filter {
+          padding: 0.75rem;
+          font-size: 1rem;
+      }
+      .channel-list {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 1rem;
+      }
+      .pagination button {
+          padding: 0.75rem 1.25rem;
+          font-size: 0.9rem;
+      }
+      .tv-container {
+        flex-direction: column;
+      }
+      #channel-list-sidebar {
+        width: 100%;
+        height: 60%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        transform: translateY(100%);
+        transition: transform 0.3s ease-in-out;
+        z-index: 30;
+        border-top: 1px solid #333;
+      }
+      #channel-list-sidebar.show {
+        transform: translateY(0);
+      }
+    }
+    .episode-toggle-button {
+        display: none; /* Hidden on desktop */
         position: absolute;
         bottom: 1rem;
         right: 1rem;
         background-color: rgba(0, 0, 0, 0.5);
         color: white;
-        padding: 0.75rem 1.25rem; /* Aumentado */
+        padding: 0.5rem 1rem;
         border-radius: 9999px;
-        font-size: 1rem; /* Aumentado */
+        text-decoration: none;
+        font-size: 0.9rem;
         z-index: 20;
         border: 1px solid white;
     }
 
-    /* Media Queries para Responsividade */
     @media (max-width: 768px) {
-        .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .hamburger { display: block; }
-        .logo { position: absolute; left: 50%; transform: translateX(-50%); }
-        .profile-section-desktop { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); }
-        #user-name { display: none; }
-
-        .max-w-6xl { padding: 1rem; }
-        #search, #category-filter {
-            padding: 0.75rem;
-            font-size: 1rem;
-        }
-        .channel-list {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
-        }
-        .card p {
-            font-size: 0.875rem;
-        }
-        .pagination button {
-            padding: 0.75rem 1.25rem; /* Aumentado */
-            font-size: 0.9rem; /* Aumentado */
-        }
-
-        /* Modals em tela cheia no mobile */
-        .modal .modal-content {
-            width: 100vw;
-            height: 100vh;
-            max-width: 100vw;
-            max-height: 100vh;
-            border-radius: 0;
-            padding: 0;
-        }
-        #series-player-modal .modal-content {
-            flex-direction: column;
-        }
-        #series-player-modal .video-container {
-            height: 40%;
-        }
-        #series-player-modal .episodes-container {
-            height: 60%;
-            padding: 1rem;
-        }
-        #series-player-modal #modal-episodes {
-             max-height: calc(100% - 120px); /* Ajuste de altura */
-        }
-
-        /* TV Player Mobile */
-        .tv-container { flex-direction: column; }
-        #channel-list-sidebar {
-            width: 100%;
-            height: 60%; /* Aumentado */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            transform: translateY(100%);
-            transition: transform 0.3s ease-in-out;
-            z-index: 30;
-            border-top: 1px solid #333;
-        }
-        #channel-list-sidebar.show {
-            transform: translateY(0);
-        }
         .episode-toggle-button {
             display: block;
         }
@@ -163,7 +196,6 @@
       <a href="#" onclick="switchTab('filmes')" id="filmes-tab" class="active">Filmes</a>
       <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
       <a href="#" onclick="switchTab('tv')" id="tv-tab">TV ao Vivo</a>
-      <!-- Botões mobile -->
       <!-- Botões mobile -->
     </div>
 
@@ -248,78 +280,6 @@
             <h2 id="series-modal-title" class="text-2xl font-bold mb-4"></h2>
             <div id="season-selector" class="mb-4"></div>
             <div id="modal-episodes" class="overflow-y-auto" style="max-height: calc(100% - 100px);"></div>
-=======
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://www.gstatic.com;
-        style-src 'self' https://cdn.tailwindcss.com https://fonts.googleapis.com;
-        font-src https://fonts.gstatic.com;
-        img-src 'self' https://via.placeholder.com https://kitsu.io https://image.tmdb.org data:;
-        connect-src 'self' https://fasthub-9a206-default-rtdb.firebaseio.com https://kitsu.io https://api.themoviedb.org https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev;
-        media-src *;
-    ">
-    <title>FastFlix</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script type="module" src="app.js"></script>
-    <style>
-        body { background-color: #141414; }
-        .navbar { background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
-        .carousel { overflow-x: auto; white-space: nowrap; }
-        .carousel::-webkit-scrollbar { display: none; }
-        .channel-item { display: inline-block; width: 200px; margin-right: 10px; }
-        #player-modal { background: rgba(0,0,0,0.9); }
-        video { width: 100%; max-height: 70vh; }
-    </style>
-</head>
-<body class="text-white">
-    <nav class="navbar fixed top-0 w-full z-20 flex justify-between items-center p-4">
-        <h1 class="text-2xl font-bold">FastFlix</h1>
-        <div class="flex items-center space-x-4">
-            <a href="#" id="filmes-tab" class="hover:text-gray-300" aria-label="Filmes">Filmes</a>
-            <a href="#" id="series-tab" class="hover:text-gray-300" aria-label="Séries">Séries</a>
-            <a href="#" id="tv-tab" class="hover:text-gray-300" aria-label="TV ao Vivo">TV ao Vivo</a>
-            <input id="search" type="text" placeholder="Buscar..." class="bg-gray-800 text-white p-2 rounded" aria-label="Buscar conteúdo">
-            <div class="relative">
-                <button id="profile-button" aria-label="Perfil">
-                    <img id="profile-icon-display" src="Default.png" alt="Ícone do perfil" class="w-8 h-8 rounded">
-                    <span id="user-name" class="ml-2"></span>
-                </button>
-                <div class="profile-dropdown absolute right-0 mt-2 w-48 bg-gray-800 rounded shadow-lg hidden" aria-expanded="false">
-                    <a href="profile.html" class="block px-4 py-2 text-white hover:bg-gray-700">Personalizar Perfil</a>
-                    <button id="logout-button" class="block w-full text-left px-4 py-2 text-white hover:bg-gray-700">Desconectar</button>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <main class="mt-20 px-4">
-        <div id="loading" class="text-center text-gray-400 hidden">Carregando lista de canais...</div>
-        <section id="filmes-category" class="category active">
-            <h2 class="text-xl font-bold mb-4">Filmes</h2>
-            <div id="filmes-list" class="carousel"></div>
-            <div id="filmes-pagination" class="flex justify-center mt-4"></div>
-        </section>
-        <section id="series-category" class="category hidden">
-            <h2 class="text-xl font-bold mb-4">Séries</h2>
-            <div id="series-list" class="carousel"></div>
-            <div id="series-pagination" class="flex justify-center mt-4"></div>
-        </section>
-        <section id="tv-category" class="category hidden">
-            <h2 class="text-xl font-bold mb-4">TV ao Vivo</h2>
-            <div id="tv-list" class="carousel"></div>
-            <div id="tv-pagination" class="flex justify-center mt-4"></div>
-        </section>
-    </main>
-    <div id="player-modal" class="fixed inset-0 z-30 hidden" aria-hidden="true">
-        <div class="flex items-center justify-center min-h-screen">
-            <div class="bg-gray-900 p-6 rounded-lg max-w-4xl w-full">
-                <button id="close-modal" class="text-white float-right" aria-label="Fechar modal">✕</button>
-                <div id="modal-content" class="mb-4"></div>
-                <video id="videoPlayer" controls></video>
-            </div>
->>>>>>> parent of 844df3c (proxy)
         </div>
     </div>
   </div>
@@ -410,5 +370,5 @@
   </script>
   <script src="auth.js" type="module"></script>
   <script src="player.js" type="module"></script>
-</body>
-</html>
+
+</body></html>
