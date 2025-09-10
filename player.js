@@ -668,7 +668,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (series.seasons[selectedSeason][0]) {
                     playVideoInModal(videoPlayer, series.seasons[selectedSeason][0].url);
                     // Highlight the first episode
-                    episodesList.querySelector('li').classList.add('active');
+                    // Check if episodesList has children before trying to select
+                    if (episodesList.children.length > 0) {
+                        episodesList.querySelector('li').classList.add('active');
+                    }
                 }
             });
 
