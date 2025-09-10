@@ -223,7 +223,10 @@
         </div>
       </div>
       <aside id="channel-list-sidebar">
-        <h3 class="text-lg font-bold mb-4">Canais ao Vivo</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem;">
+            <h3 class="text-lg font-bold">Canais ao Vivo</h3>
+            <button id="close-channels-btn" class="text-white text-2xl" style="background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
         <input type="text" id="channel-search-tv" placeholder="Buscar canal..." class="w-full p-2 bg-gray-700 rounded mb-4">
         <ul id="channel-list-tv" class="space-y-2" style="max-height: calc(100vh - 120px); overflow-y: auto;">
           <!-- Lista de canais será populada via JS -->
