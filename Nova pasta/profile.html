@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil - FastFlix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
+            background-color: #2d3748; /* gray-800 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .icon-item {
+            cursor: pointer;
+            border: 3px solid transparent;
+            border-radius: 0.375rem; /* Alterado para cantos levemente arredondados */
+            transition: border-color 0.3s;
+            overflow: hidden; /* Garante que a imagem interna não ultrapasse a borda */
+        }
+        .icon-item.selected {
+            border-color: #e53e3e; /* red-600 */
+        }
+        .icon-item img {
+            width: 100%;
+            height: auto;
+            display: block; /* Remove qualquer espaço extra abaixo da imagem */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="navbar text-center">
+        <a href="index.html" class="text-blue-400 hover:underline">Voltar para o Início</a>
+    </div>
+
+    <div class="container mx-auto p-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8 text-center">Gerenciar Perfil</h1>
+
+        <!-- Profile General Settings -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Seu Perfil</h2>
+            
+            <div class="mb-4">
+                <label for="user-name-input" class="block text-sm font-medium text-gray-300 mb-2">Nome de Usuário</label>
+                <input type="text" id="user-name-input" placeholder="Digite seu nome de usuário" class="w-full bg-gray-700 text-white p-3 rounded-md">
+            </div>
+
+            <div class="mb-4">
+                <p class="block text-sm font-medium text-gray-300 mb-2">Status da Conta: <span id="account-status" class="font-bold"></span></p>
+                <p class="block text-sm font-medium text-gray-300 mb-2">Expira em: <span id="account-expiration" class="font-bold"></span></p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-4 mt-6">Escolha seu Ícone</h3>
+            <div id="icon-selection-grid" class="icon-grid mb-4">
+                <!-- Icons will be populated by profile.js -->
+            </div>
+            
+            <button id="save-profile-button" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Salvar Perfil</button>
+            <p id="profile-message" class="text-center mt-2"></p>
+        </div>
+
+        <!-- Change Password -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">Alterar Senha</h2>
+            <form id="change-password-form" class="space-y-4">
+                <div>
+                    <label for="new-password" class="block text-sm font-medium text-gray-300">Nova Senha</label>
+                    <input type="password" id="new-password" placeholder="Digite a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirmar Nova Senha</label>
+                    <input type="password" id="confirm-password" placeholder="Confirme a nova senha" class="w-full bg-gray-700 text-white p-3 rounded-md" required>
+                </div>
+                <button type="submit" class="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-md hover:bg-red-700 transition-colors">Alterar Senha</button>
+                <p id="password-message" class="text-center mt-2"></p>
+            </form>
+        </div>
+    </div>
+
+    <script src="profile.js" type="module"></script>
+    <script type="module">
+        import { auth, onAuthStateChanged } from './firebase-init.js';
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        });
+    </script>
+</body>
+</html>

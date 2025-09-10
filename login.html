@@ -1,157 +1,69 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - FastFlix</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>FastFlix - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="app.js"></script>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: url('https://assets.nflxext.com/ffe/siteui/vlv3/93c9f3b4-85a7-4d8f-8738-4d8b4b4b4b4b/93c9f3b4-85a7-4d8f-8738-4d8b4b4b4b4b.jpg') no-repeat center center fixed;
-            background-size: cover;
-            height: 100dvh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-        }
-        .login-container {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            max-width: 450px;
-            padding: 20px;
-        }
-        .login-box {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 60px 68px 40px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        .logo-title {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .logo-title h1 {
-            color: #e50914;
-            font-size: 2.5rem;
-            font-weight: bold;
-        }
-        .logo-title i {
-            color: #e50914;
-            margin-bottom: 10px;
-        }
-        #login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        #login-form h2 {
-            color: #fff;
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .form-group label {
-            color: #b3b3b3;
-            font-size: 0.9rem;
-        }
-        .form-group input {
-            background: #333;
-            border: none;
-            border-radius: 4px;
-            padding: 16px;
-            color: #fff;
-            font-size: 1rem;
-            outline: none;
-        }
-        .form-group input:focus {
-            background: #454545;
-            box-shadow: 0 0 0 2px #e50914;
-        }
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .checkbox-group input {
-            accent-color: #e50914;
-        }
-        .checkbox-group label {
-            color: #b3b3b3;
-            font-size: 0.9rem;
-        }
-        button[type="submit"] {
-            background: #e50914;
-            color: #fff;
-            font-size: 1rem;
-            font-weight: bold;
-            padding: 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        button[type="submit"]:hover {
-            background: #f40612;
-        }
-        #error-message {
-            color: #e87c03;
-            font-size: 0.9rem;
-            text-align: center;
-            min-height: 20px;
-        }
-        @media (max-width: 600px) {
-            .login-box {
-                padding: 40px 20px;
-            }
-            .login-container {
-                padding: 10px;
-            }
-        }
+        body { background-color: #141414; }
     </style>
 </head>
-<body>
-    <div class="overlay"></div>
-    <div class="login-container">
-        <div class="login-box">
-            <div class="logo-title">
-                <i class="fas fa-tv text-4xl"></i>
-                <h1>FastFlix</h1>
+<body class="text-white flex items-center justify-center min-h-screen">
+    <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full">
+        <h1 class="text-3xl font-bold mb-6 text-center">FastFlix</h1>
+        <div id="login-form">
+            <label for="username" class="block mb-2">Usuário</label>
+            <input id="username" type="text" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Nome de usuário">
+            <label for="password" class="block mb-2">Senha</label>
+            <input id="password" type="password" class="w-full bg-gray-700 text-white p-2 rounded mb-4" aria-label="Senha">
+            <div class="flex items-center mb-4">
+                <input id="remember-me" type="checkbox" class="mr-2">
+                <label for="remember-me">Lembrar-me</label>
             </div>
-            <form id="login-form">
-                <h2>Entrar</h2>
-                <div class="form-group">
-                    <label for="login-username">Usuário</label>
-                    <input type="text" id="login-username" placeholder="Digite seu usuário" required>
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Senha</label>
-                    <input type="password" id="login-password" placeholder="Digite sua senha" required>
-                </div>
-                <div class="checkbox-group">
-                    <input id="remember-me" name="remember-me" type="checkbox">
-                    <label for="remember-me">Lembrar de mim</label>
-                </div>
-                <button type="submit">Entrar</button>
-                <p id="error-message"></p>
-            </form>
+            <button type="button" onclick="document.getElementById('login-form').dispatchEvent(new Event('submit'))" class="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700" aria-label="Entrar">Entrar</button>
+            <p id="error-message" class="mt-2 text-center"></p>
         </div>
     </div>
-    <script src="auth.js" type="module"></script>
 </body>
 </html>
