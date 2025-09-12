@@ -26,23 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkProtocolAndWarn() {
+        const hasSeenProtocolWarning = localStorage.getItem('hasSeenProtocolWarning');
         if (!hasSeenProtocolWarning) {
-        protocolWarningPopup.style.display = 'flex';
-    }
+            const protocolWarningPopup = document.getElementById('protocolWarningPopup');
+            if (protocolWarningPopup) {
+                protocolWarningPopup.style.display = 'flex';
+            } else {
+                console.warn('Elemento de aviso de protocolo (#protocolWarningPopup) não encontrado no DOM');
+            }
+        }
     }
 
     // Função para buscar capa da série via Kitsu API
     async function fetchSeriesPoster(seriesName) {
-        // Verificar cache primeiro
         if (POSTER_CACHE.has(seriesName)) {
             return POSTER_CACHE.get(seriesName);
         }
 
-        // Normalizar o nome para busca
         const cleanName = seriesName.trim();
         let posterUrl = 'https://via.placeholder.com/200x300?text=Série';
 
-        // Tentar Kitsu API
         try {
             const response = await fetch(
                 `https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(cleanName)}`,
@@ -64,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(`Erro ao buscar capa na Kitsu para "${seriesName}":`, error);
         }
 
-        // Retornar placeholder se nenhuma capa for encontrada
         POSTER_CACHE.set(seriesName, posterUrl);
         console.warn(`Nenhuma capa encontrada para "${seriesName}", usando placeholder`);
         return posterUrl;
@@ -78,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cached) {
             try {
                 const { timestamp, data } = JSON.parse(cached);
+                console.log('Cache data:', JSON.stringify(data, null, 2));
                 if (Date.now() - timestamp < CACHE_VALIDITY_MS && data && (
                     (data.filmes && Object.keys(data.filmes).length > 0) ||
                     (data.series && Object.keys(data.series).length > 0) ||
@@ -85,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 )) {
                     allChannels = data;
                     console.log('Carregado do cache:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
-                    console.log(`Cache carregado em ${performance.now() - startTime} ms`);
                     displayChannels();
                     showLoadingIndicator(false);
                     return;
@@ -104,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const filePaths = [
             'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u'
         ];
-        const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
+        const fallbackUrl = 'https://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
 
         let content = null;
         let loadedFrom = '';
@@ -120,9 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadedFrom = filePath;
                     console.log(`Carregado de ${filePath} em ${performance.now() - fetchStart} ms`);
                     break;
+                } else {
+                    console.error(`Falha ao carregar ${filePath}: ${response.status} ${response.statusText}`);
                 }
             } catch (error) {
-                console.error(`Falha ao carregar ${filePath}:`, error.message);
+                console.error(`Erro ao buscar ${filePath}:`, error.message);
             }
         }
 
@@ -141,36 +145,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadedFrom = fallbackUrl;
                     console.log(`Carregado de fallback URL em ${performance.now() - fetchStart} ms`);
                 } else {
-                    // Tentar reconexão com HTTP explícito como fallback
-                    const httpFallbackUrl = fallbackUrl.replace('https://', 'http://');
-                    const httpResponse = await fetch(httpFallbackUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0',
-                            'Accept': 'text/plain,*/*',
-                            'Referer': 'http://localhost'
-                        }
-                    });
-                    if (httpResponse.ok) {
-                        content = await httpResponse.text();
-                        loadedFrom = httpFallbackUrl;
-                        console.log(`Carregado de fallback HTTP URL em ${performance.now() - fetchStart} ms`);
-                    } else {
-                        console.error(`Falha ao carregar fallback HTTP URL: ${httpFallbackUrl}`, httpResponse.status);
-                        alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
-                        showLoadingIndicator(false);
-                        return;
-                    }
+                    console.error(`Falha ao carregar fallback URL: ${response.status} ${response.statusText}`);
+                    alert(`Erro ao carregar a lista M3U: ${response.status} ${response.statusText}`);
+                    showLoadingIndicator(false);
+                    return;
                 }
             } catch (error) {
-                console.error(`Falha ao carregar fallback URL:`, error.message);
-                alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
+                console.error(`Erro ao carregar fallback URL:`, error.message);
+                alert(`Erro ao carregar a lista M3U: ${error.message}`);
                 showLoadingIndicator(false);
                 return;
             }
         }
 
         if (content) {
+            console.log('M3U content:', content.substring(0, 500));
             parseM3UInWorker(content).then(parsedData => {
+                console.log('Parsed M3U data:', JSON.stringify(parsedData, null, 2));
                 allChannels = parsedData;
                 console.log('Parse concluído via Worker:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
                 try {
@@ -183,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log(`Carregamento total levou ${performance.now() - startTime} ms`);
             }).catch(error => {
                 console.error('Erro no Worker:', error);
-                alert('Erro ao processar a lista M3U.');
+                alert('Erro ao processar a lista M3U: ' + error.message);
                 showLoadingIndicator(false);
             });
         } else {
@@ -194,7 +185,155 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function parseM3UInWorker(content) {
         return new Promise((resolve, reject) => {
-            const workerCode = `\n                self.onmessage = function(e) {\n                    console.log(\"[Worker] Received data.\");\n                    try {\n                        var content = e.data;\n                        if (!content || typeof content !== 'string') {\n                            console.error(\"[Worker] Invalid content received.\");\n                            self.postMessage({ filmes: {}, series: {}, tv: {} });\n                            return;\n                        }\n                        var lines = content.split("\\n");\n                        console.log(\"[Worker] Processing " + lines.length + " lines.\");\n                        var allChannels = { filmes: {}, series: {}, tv: {} };\n                        var currentChannel = null;\n                        var channelsFound = 0;\n\n                        function normalizeTitle(title) {\n                            return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";\n                        }\n\n                        function parseGroup(group) {\n                            var clean = group.replace(/[◆]/g, "").trim();\n                            var parts = clean.split("|").map(function(part) { return part.trim(); });\n                            var main = parts[0].toLowerCase();\n                            var sub = parts.length > 1 ? parts[1] : "Outros";\n                            return { main: main, sub: sub };\n                        }\n\n                        function categorizeChannel(channel) {\n                            try {\n                                var title = channel.title.toLowerCase();\n                                var groupInfo = parseGroup(channel.group);\n                                var main = groupInfo.main;\n                                var sub = groupInfo.sub;\n                                var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);\n                                var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);\n\n                                if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {\n                                    if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                    allChannels.tv[sub].push({ \n                                        title: normalizeTitle(channel.title), \n                                        url: channel.url, \n                                        logo: channel.logo \n                                    });\n                                    return;\n                                }\n\n                                if (main.includes("series") || main.includes("série")) {\n                                    if (hasSeriesPattern && !looksLikeLinearChannel) {\n                                        var seriesName, season, episodeTitle;\n                                        var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);\n                                        if (match) {\n                                            seriesName = normalizeTitle(match[1]);\n                                            season = match[2];\n                                            episodeTitle = "Episodio " + match[3];\n                                        } else {\n                                            seriesName = normalizeTitle(title.replace(/(temporada|episodio).*/i, "").trim());\n                                            season = "1";\n                                            episodeTitle = normalizeTitle(title);\n                                        }\n                                        var seriesKey = seriesName.toLowerCase();\n                                        if (!allChannels.series[sub]) allChannels.series[sub] = {};\n                                        var seriesSub = allChannels.series[sub];\n                                        if (!seriesSub[seriesKey]) {\n                                            seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };\n                                        }\n                                        if (!seriesSub[seriesKey].seasons[season]) {\n                                            seriesSub[seriesKey].seasons[season] = [];\n                                        }\n                                        seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });\n                                        return;\n                                    } else {\n                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                        allChannels.tv[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    }\n                                }\n\n                                if (main.includes("filmes") || main.includes("filme")) {\n                                    if (!looksLikeLinearChannel && title.length > 5) {\n                                        if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];\n                                        allChannels.filmes[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    } else {\n                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                        allChannels.tv[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    }\n                                }\n\n                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];\n                                allChannels.tv["Outros"].push({ \n                                    title: normalizeTitle(channel.title), \n                                    url: channel.url, \n                                    logo: channel.logo \n                                });\n                            } catch (error) {\n                                console.error("Erro ao categorizar canal:", channel.title, error);\n                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];\n                                allChannels.tv["Outros"].push({ \n                                    title: normalizeTitle(channel.title), \n                                    url: channel.url, \n                                    logo: channel.logo \n                                });\n                            }\n                        }\n\n                        for (var i = 0; i < lines.length; i++) {\n                            var line = lines[i].trim();\n                            try {\n                                if (line.startsWith("#EXTINF:")) {\n                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name=\"[^\"]+\"/i);\n                                    var groupMatch = line.match(/group-title=\"[^\"]+\"/i);\n                                    var logoMatch = line.match(/tvg-logo=\"[^\"]+\"/i);\n                                    var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";\n                                    currentChannel = {\n                                        title: title,\n                                        url: "",\n                                        group: groupMatch ? groupMatch[1] : "",\n                                        logo: logoMatch ? logoMatch[1] : ""\n                                    };\n                                } else if (line && !line.startsWith("#") && currentChannel) {\n                                    currentChannel.url = line;\n                                    categorizeChannel(currentChannel);\n                                    channelsFound++;\n                                    currentChannel = null;\n                                }\n                            } catch (error) {\n                                console.error(\"[Worker] Error processing line " + i + ":", line, error);\n                                currentChannel = null;\n                            }\n                        }\n                        console.log(\"[Worker] Parsing complete. Found " + channelsFound + " channels.\");\n                        console.log(\"[Worker] Final data:", allChannels);\n                        self.postMessage(allChannels);\n                    } catch (error) {\n                        console.error(\"[Worker] General parsing error:\", error);\n                        self.postMessage({ error: "Erro geral no parsing: " + error.message });\n                    }\n                };\n            `;
+            const workerCode = `
+                self.onmessage = function(e) {
+                    try {
+                        var content = e.data;
+                        var lines = content.split("\\n");
+                        var allChannels = { filmes: {}, series: {}, tv: {} };
+                        var currentChannel = null;
+
+                        function normalizeTitle(title) {
+                            return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
+                        }
+
+                        function parseGroup(group) {
+                            var clean = group.replace(/[◆]/g, "").trim();
+                            var parts = clean.split("|").map(function(part) { return part.trim(); });
+                            var main = parts[0].toLowerCase();
+                            var sub = parts.length > 1 ? parts[1] : "Outros";
+                            return { main: main, sub: sub };
+                        }
+
+                        function categorizeChannel(channel) {
+                            try {
+                                var title = channel.title.toLowerCase();
+                                var groupInfo = parseGroup(channel.group);
+                                var main = groupInfo.main;
+                                var sub = groupInfo.sub;
+                                var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
+                                var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
+
+                                // Convert HTTP to HTTPS to avoid mixed content
+                                channel.url = channel.url.replace(/^http:/, 'https:');
+                                channel.logo = channel.logo ? channel.logo.replace(/^http:/, 'https:') : '';
+
+                                if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
+                                    if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                    allChannels.tv[sub].push({ 
+                                        title: normalizeTitle(channel.title), 
+                                        url: channel.url, 
+                                        logo: channel.logo 
+                                    });
+                                    return;
+                                }
+
+                                if (main.includes("series") || main.includes("série")) {
+                                    if (hasSeriesPattern && !looksLikeLinearChannel) {
+                                        var seriesName, season, episodeTitle;
+                                        var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);
+                                        if (match) {
+                                            seriesName = normalizeTitle(match[1]);
+                                            season = match[2];
+                                            episodeTitle = "Episodio " + match[3];
+                                        } else {
+                                            seriesName = normalizeTitle(title.replace(/(temporada|episodio).*/i, "").trim());
+                                            season = "1";
+                                            episodeTitle = normalizeTitle(title);
+                                        }
+                                        var seriesKey = seriesName.toLowerCase();
+                                        if (!allChannels.series[sub]) allChannels.series[sub] = {};
+                                        var seriesSub = allChannels.series[sub];
+                                        if (!seriesSub[seriesKey]) {
+                                            seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };
+                                        }
+                                        if (!seriesSub[seriesKey].seasons[season]) {
+                                            seriesSub[seriesKey].seasons[season] = [];
+                                        }
+                                        seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });
+                                        return;
+                                    } else {
+                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                        allChannels.tv[sub].push({ 
+                                            title: normalizeTitle(channel.title), 
+                                            url: channel.url, 
+                                            logo: channel.logo 
+                                        });
+                                        return;
+                                    }
+                                }
+
+                                if (main.includes("filmes") || main.includes("filme")) {
+                                    if (!looksLikeLinearChannel && title.length > 5) {
+                                        if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];
+                                        allChannels.filmes[sub].push({ 
+                                            title: normalizeTitle(channel.title), 
+                                            url: channel.url, 
+                                            logo: channel.logo 
+                                        });
+                                        return;
+                                    } else {
+                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
+                                        allChannels.tv[sub].push({ 
+                                            title: normalizeTitle(channel.title), 
+                                            url: channel.url, 
+                                            logo: channel.logo 
+                                        });
+                                        return;
+                                    }
+                                }
+
+                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
+                                allChannels.tv["Outros"].push({ 
+                                    title: normalizeTitle(channel.title), 
+                                    url: channel.url, 
+                                    logo: channel.logo 
+                                });
+                            } catch (error) {
+                                console.error("Erro ao categorizar canal:", channel.title, error);
+                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
+                                allChannels.tv["Outros"].push({ 
+                                    title: normalizeTitle(channel.title), 
+                                    url: channel.url, 
+                                    logo: channel.logo 
+                                });
+                            }
+                        }
+
+                        for (var i = 0; i < lines.length; i++) {
+                            var line = lines[i].trim();
+                            try {
+                                if (line.startsWith("#EXTINF:")) {
+                                    var titleMatch = line.match(/,(.+)$/) || line.match(/tvg-name=\"([^\"]+)\"/i);
+                                    var groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
+                                    var logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
+                                    var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
+                                    currentChannel = {
+                                        title: title,
+                                        url: "",
+                                        group: groupMatch ? groupMatch[1] : "",
+                                        logo: logoMatch ? logoMatch[1] : ""
+                                    };
+                                    console.log('Parsed channel:', currentChannel);
+                                } else if (line && !line.startsWith("#") && currentChannel) {
+                                    currentChannel.url = line;
+                                    console.log('Categorized channel:', currentChannel);
+                                    categorizeChannel(currentChannel);
+                                    currentChannel = null;
+                                }
+                            } catch (error) {
+                                console.error("Erro ao processar linha", i, ":", line, error);
+                                currentChannel = null;
+                            }
+                        }
+
+                        console.log('Final parsed channels:', JSON.stringify(allChannels, null, 2));
+                        self.postMessage(allChannels);
+                    } catch (error) {
+                        self.postMessage({ error: "Erro geral no parsing: " + error.message });
+                    }
+                };
+            `;
 
             const blob = new Blob([workerCode], { type: 'application/javascript; charset=utf-8' });
             const worker = new Worker(URL.createObjectURL(blob));
@@ -345,6 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayChannels(filter = '') {
+        console.log('Displaying channels for tab:', currentTab, 'subcat:', currentSubcat, 'filter:', filter);
         const activeId = currentTab;
         const listContainer = document.getElementById(activeId);
         const paginationContainer = document.getElementById(`${activeId}-pagination`);
@@ -357,7 +497,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Update subcategory selector
         const subcatSelector = document.getElementById('category-filter');
         if (!subcatSelector) {
             console.error('Seletor de categoria (#category-filter) não encontrado no DOM');
@@ -400,9 +539,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createMovieCard(item) {
+        const defaultImage = 'https://via.placeholder.com/200x300?text=Filme';
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
-        div.innerHTML = `\n            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=Filme'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>\n        `;
+        div.innerHTML = `
+            <img src="${item.logo || defaultImage}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
+            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
+        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openMoviePlayerModal(item.url);
@@ -411,12 +554,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function createSeriesCard(item) {
+        const defaultImage = 'https://via.placeholder.com/200x300?text=Série';
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
         
         let posterUrl = item.logo || await fetchSeriesPoster(item.displayName);
         
-        div.innerHTML = `\n            <img src="${posterUrl}" alt="${item.displayName || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.displayName || 'Sem Título'}</p>\n        `;
+        div.innerHTML = `
+            <img src="${posterUrl || defaultImage}" alt="${item.displayName || 'Sem Título'}" class="w-full h-auto object-cover">
+            <p class="p-2 text-center text-sm">${item.displayName || 'Sem Título'}</p>
+        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openSeriesPlayerModal(item);
@@ -425,9 +572,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function createTVCard(item) {
+        const defaultImage = 'https://via.placeholder.com/200x300?text=TV';
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
-        div.innerHTML = `\n            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=TV'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>\n        `;
+        div.innerHTML = `
+            <img src="${item.logo || defaultImage}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
+            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
+        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openMoviePlayerModal(item.url);
@@ -450,15 +601,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     videoPlayer.play();
                 });
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS Error:', data);
+                    alert('Erro ao carregar o vídeo: ' + data.type);
+                });
             } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                 videoPlayer.src = url;
                 videoPlayer.addEventListener('loadedmetadata', () => {
                     videoPlayer.play();
                 });
+            } else {
+                console.error('HLS não suportado e formato M3U8 não compatível');
+                alert('Formato de vídeo não suportado pelo navegador');
             }
-        } else { // For MP4 and other formats
+        } else {
             videoPlayer.src = url;
-            videoPlayer.play();
+            videoPlayer.play().catch(error => {
+                console.error('Erro ao reproduzir vídeo:', error);
+                alert('Erro ao reproduzir vídeo: ' + error.message);
+            });
         }
     }
 
@@ -521,11 +682,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     episodesList.appendChild(li);
                 });
                 episodesContainer.appendChild(episodesList);
-                // Play the first episode of the season by default
                 if (series.seasons[selectedSeason][0]) {
                     playVideoInModal(videoPlayer, series.seasons[selectedSeason][0].url);
-                    // Highlight the first episode
-                    // Check if episodesList has children before trying to select
                     if (episodesList.children.length > 0) {
                         episodesList.querySelector('li').classList.add('active');
                     }
@@ -670,7 +828,10 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredChannels.forEach(channel => {
                 const li = document.createElement('li');
                 li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer flex items-center';
-                li.innerHTML = `\n                    <img src="${channel.logo || 'https://via.placeholder.com/50x50?text=TV'}" alt="${channel.title}" class="w-10 h-10 mr-4">\n                    <span>${normalizeTitle(channel.title)}</span>\n                `;
+                li.innerHTML = `
+                    <img src="${channel.logo || 'https://via.placeholder.com/50x50?text=TV'}" alt="${channel.title}" class="w-10 h-10 mr-4">
+                    <span>${normalizeTitle(channel.title)}</span>
+                `;
                 li.addEventListener('click', () => {
                     playChannel(channel.url);
                     document.querySelectorAll('#channel-list-tv li.active').forEach(el => el.classList.remove('active'));
@@ -693,16 +854,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     tvHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
                         videoPlayer.play();
                     });
+                    tvHlsInstance.on(Hls.Events.ERROR, (event, data) => {
+                        console.error('HLS Error:', data);
+                        alert('Erro ao carregar o canal: ' + data.type);
+                    });
                 } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
                     videoPlayer.src = url;
                     videoPlayer.addEventListener('loadedmetadata', () => {
                         videoPlayer.play();
                     });
+                } else {
+                    console.error('HLS não suportado e formato M3U8 não compatível');
+                    alert('Formato de vídeo não suportado pelo navegador');
                 }
-            }
-        } else { // For MP4 and other formats
+            } else {
                 videoPlayer.src = url;
-                videoPlayer.play();
+                videoPlayer.play().catch(error => {
+                    console.error('Erro ao reproduzir canal:', error);
+                    alert('Erro ao reproduzir canal: ' + error.message);
+                });
             }
         }
 
@@ -722,8 +892,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderChannels();
     }
-
-    
 
     const searchInput = document.getElementById('search');
     if (searchInput) {
