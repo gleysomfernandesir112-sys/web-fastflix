@@ -310,9 +310,9 @@
     <i class="fas fa-bars hamburger" onclick="toggleMenu()"></i>
     <div class="logo">FastFlix</div>
     <div class="nav-links" id="nav-links">
-      <a href="#" onclick="switchTab('filmes')" id="filmes-tab" class="active">Filmes</a>
-      <a href="#" onclick="switchTab('series')" id="series-tab">Séries</a>
-      <a href="#" onclick="switchTab('tv')" id="tv-tab">TV ao Vivo</a>
+      <a href="#" id="filmes-tab" class="active">Filmes</a>
+      <a href="#" id="series-tab">Séries</a>
+      <a href="#" id="tv-tab">TV ao Vivo</a>
     </div>
     <div class="profile-section-desktop">
       <div class="profile-dropdown">
@@ -331,7 +331,7 @@
 
   <!-- Conteúdo principal -->
   <div class="max-w-6xl mx-auto p-4">
-    <input type="text" id="search" placeholder="Buscar..." class="w-full p-3 bg-gray-800 text-white border-none rounded-md mb-6 focus:outline-none" oninput="filterItems()">
+    <input type="text" id="search" placeholder="Buscar..." class="w-full p-3 bg-gray-800 text-white border-none rounded-md mb-6 focus:outline-none">
     <div id="filters" class="flex gap-4 mb-6">
       <select id="category-filter" class="bg-gray-800 text-white p-2 rounded-md focus:outline-none">
         <option value="">Todas as Categorias</option>
@@ -361,15 +361,15 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2>Canais ao Vivo</h2>
-        <button onclick="closeTvPlayerModal()">&times;</button>
+        <button id="close-tv-player-btn">&times;</button>
       </div>
       <div class="modal-body">
         <div class="video-container">
-          <video id="tvPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+          <video id="tvPlayer" controls autoplay></video>
         </div>
         <div class="channel-list-container">
-          <input type="text" id="channel-search" class="channel-search" placeholder="Pesquisar canais...">
-          <ul id="channel-list"></ul>
+          <input type="text" id="tv-channel-search" class="channel-search" placeholder="Pesquisar canais...">
+          <ul id="tv-channel-list"></ul>
         </div>
       </div>
     </div>
@@ -377,24 +377,24 @@
 
   <!-- Series Player Modal -->
   <div id="series-player-modal" class="modal">
-    <div class="modal-content" style="display: flex; flex-direction: column; max-width: 80vw; max-height: 80vh; width: 100%; height: 100%; padding: 0; background-color: #1f1f1f;">
-      <div class="video-container" style="width: 100%; height: 60%; background-color: black; position: relative;">
-        <video id="seriesVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
-        <a href="#" onclick="closeSeriesPlayerModal()" class="back-button" style="position: absolute; top: 1rem; left: 1rem; z-index: 1;">Voltar</a>
-      </div>
-      <div class="episodes-container" style="width: 100%; height: 40%; padding: 1rem; overflow-y: auto;">
-        <h2 id="series-modal-title" class="text-2xl font-bold mb-4"></h2>
-        <div id="season-selector" class="mb-4"></div>
-        <div id="modal-episodes" class="overflow-y-auto" style="max-height: calc(100% - 100px);"></div>
-      </div>
+    <div class="modal-content">
+        <div class="video-container" style="height: 60%;">
+            <video id="seriesVideoPlayer" controls autoplay></video>
+            <button class="back-button" id="close-series-player-btn">Voltar</button>
+        </div>
+        <div class="episodes-container" style="height: 40%;">
+            <h2 id="series-modal-title"></h2>
+            <div id="season-selector"></div>
+            <div id="modal-episodes"></div>
+        </div>
     </div>
   </div>
 
   <!-- Movie Player Modal -->
   <div id="movie-player-modal" class="modal">
     <div class="video-container" style="width: 100%; height: 100%;">
-      <a href="#" onclick="closeMoviePlayerModal()" class="back-button">Voltar</a>
-      <video id="movieVideoPlayer" controls autoplay style="width: 100%; height: 100%;"></video>
+        <video id="movieVideoPlayer" controls autoplay></video>
+        <button class="back-button" id="close-movie-player-btn">Voltar</button>
     </div>
   </div>
 
@@ -424,35 +424,27 @@
 
     if (protectedPages.includes(currentPage)) {
       onAuthStateChanged(auth, async (user) => {
-        console.log("onAuthStateChanged triggered. User:", user ? user.uid : "null");
         if (!user) {
-          console.log("No user found, redirecting to login.html");
           window.location.href = 'login.html';
         } else {
-          console.log("User authenticated. Checking status...");
           const userRef = ref(db, `users/${user.uid}`);
           const snapshot = await get(userRef);
 
           if (snapshot.exists()) {
             const userData = snapshot.val();
-            console.log("User data from DB:", userData);
             const isExpired = userData.expirationDate && new Date(userData.expirationDate) < new Date();
 
             if (userData.status === 'blocked') {
-              console.log("Account blocked. Signing out and redirecting.");
               alert('Sua conta está bloqueada. Entre em contato com o suporte.');
               signOut(auth);
               window.location.href = 'login.html';
             } else if (isExpired) {
-              console.log("Account expired. Showing modal.");
               document.getElementById('expired-account-modal').style.display = 'flex';
               document.body.style.visibility = 'visible';
             } else {
-              console.log("Account active. Making body visible.");
               document.body.style.visibility = 'visible';
             }
           } else {
-            console.log("User exists in Auth but not in DB. Signing out and redirecting.");
             alert('Sua conta não foi encontrada ou está inválida. Entre em contato com o suporte.');
             signOut(auth);
             window.location.href = 'login.html';
@@ -460,7 +452,6 @@
         }
       });
     } else {
-      console.log("Page not protected, making body visible.");
       document.body.style.visibility = 'visible';
     }
 
@@ -480,66 +471,13 @@
     document.addEventListener('click', (event) => {
       const dropdown = document.getElementById('dropdown-content');
       const profileInfo = document.querySelector('.profile-info');
-      if (!profileInfo.contains(event.target) && dropdown.classList.contains('show')) {
+      if (profileInfo && !profileInfo.contains(event.target) && dropdown.classList.contains('show')) {
         dropdown.classList.remove('show');
       }
     });
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('#nav-links a').forEach(link => {
-        link.addEventListener('click', () => {
-          const navLinks = document.querySelector('#nav-links');
-          if (navLinks && navLinks.classList.contains('nav-active')) {
-            navLinks.classList.remove('nav-active');
-          }
-        });
-      });
-
-      // Abre o modal de TV ao clicar em "TV ao Vivo"
-      document.getElementById('tv-tab').addEventListener('click', (e) => {
-        e.preventDefault();
-        openTvPlayerModal();
-      });
-    });
-
-    function openTvPlayerModal() {
-      document.getElementById('tv-player-modal').style.display = 'flex';
-      // Carrega os canais (a função loadM3U está no player-tv.js)
-    }
-
-    function closeTvPlayerModal() {
-      const modal = document.getElementById('tv-player-modal');
-      modal.style.display = 'none';
-      const videoPlayer = document.getElementById('tvPlayer');
-      if (videoPlayer) {
-        videoPlayer.pause();
-        videoPlayer.src = "";
-        videoPlayer.load();
-      }
-    }
-
-    function closeSeriesPlayerModal() {
-      document.getElementById('series-player-modal').style.display = 'none';
-      const videoPlayer = document.getElementById('seriesVideoPlayer');
-      if (videoPlayer) {
-        videoPlayer.pause();
-        videoPlayer.src = "";
-        videoPlayer.load();
-      }
-    }
-
-    function closeMoviePlayerModal() {
-      document.getElementById('movie-player-modal').style.display = 'none';
-      const videoPlayer = document.getElementById('movieVideoPlayer');
-      if (videoPlayer) {
-        videoPlayer.pause();
-        videoPlayer.src = "";
-        videoPlayer.load();
-      }
-    }
   </script>
   <script src="auth.js" type="module"></script>
   <script src="player.js" type="module"></script>
-  <script src="player-tv.js" type="module"></script>
 </body>
 </html>
