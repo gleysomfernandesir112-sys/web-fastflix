@@ -7,8 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastNavigationTime = 0;
     const NAVIGATION_DEBOUNCE_MS = 1000;
     const CACHE_VALIDITY_MS = 24 * 3600000; // 24 horas
-    const POSTER_CACHE = new Map(); // Cache para URLs de capas
+    const POSTER_CACHE = new Map();
     let tvHlsInstance = null;
+    const CHUNK_SIZE = 10000; // Parse 10,000 lines at a time
+    let isParsing = false;
 
     function normalizeTitle(title) {
         return title ? title.trim().replace(/\b\w/g, c => c.toUpperCase()) : 'Sem Título';
@@ -37,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Função para buscar capa da série via Kitsu API
     async function fetchSeriesPoster(seriesName) {
         if (POSTER_CACHE.has(seriesName)) {
             return POSTER_CACHE.get(seriesName);
@@ -72,33 +73,27 @@ document.addEventListener('DOMContentLoaded', () => {
         return posterUrl;
     }
 
-    async function loadM3U() {
-        const cacheKey = `m3u_data`;
+    async function loadM3U(tab = currentTab, subcat = currentSubcat) {
+        const cacheKey = `m3u_data_${tab}_${subcat}`;
         const startTime = performance.now();
         const cached = localStorage.getItem(cacheKey);
 
         if (cached) {
             try {
                 const { timestamp, data } = JSON.parse(cached);
-                console.log('Cache data:', JSON.stringify(data, null, 2));
-                if (Date.now() - timestamp < CACHE_VALIDITY_MS && data && (
-                    (data.filmes && Object.keys(data.filmes).length > 0) ||
-                    (data.series && Object.keys(data.series).length > 0) ||
-                    (data.tv && Object.keys(data.tv).length > 0)
-                )) {
-                    allChannels = data;
-                    console.log('Carregado do cache:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
+                console.log(`Cache data for ${tab}/${subcat}:`, JSON.stringify(data, null, 2));
+                if (Date.now() - timestamp < CACHE_VALIDITY_MS && data && Object.keys(data).length > 0) {
+                    allChannels[tab][subcat] = data;
+                    console.log(`Carregado do cache para ${tab}/${subcat}:`, Object.keys(allChannels[tab][subcat]).length, 'itens');
                     displayChannels();
                     showLoadingIndicator(false);
-                    return;
+                    return true;
                 } else {
-                    console.log('Cache expirado ou inválido, recarregando...');
+                    console.log(`Cache expirado ou inválido para ${tab}/${subcat}, recarregando...`);
                 }
             } catch (e) {
-                console.error('Erro ao ler cache do localStorage:', e);
+                console.error(`Erro ao ler cache do localStorage para ${tab}/${subcat}:`, e);
             }
-        } else {
-            console.log('Nenhum cache encontrado, carregando M3U...');
         }
 
         showLoadingIndicator(true);
@@ -148,79 +143,108 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error(`Falha ao carregar fallback URL: ${response.status} ${response.statusText}`);
                     alert(`Erro ao carregar a lista M3U: ${response.status} ${response.statusText}`);
                     showLoadingIndicator(false);
-                    return;
+                    return false;
                 }
             } catch (error) {
                 console.error(`Erro ao carregar fallback URL:`, error.message);
                 alert(`Erro ao carregar a lista M3U: ${error.message}`);
                 showLoadingIndicator(false);
-                return;
+                return false;
             }
         }
 
         if (content) {
-            console.log('M3U content:', content.substring(0, 500));
-            parseM3UInWorker(content).then(parsedData => {
-                console.log('Parsed M3U data:', JSON.stringify(parsedData, null, 2));
-                allChannels = parsedData;
-                console.log('Parse concluído via Worker:', Object.keys(allChannels.filmes).length, 'subcategorias de filmes,', Object.keys(allChannels.series).length, 'subcategorias de séries,', Object.keys(allChannels.tv).length, 'subcategorias de canais');
-                try {
-                    saveToCacheIfPossible();
-                } catch (e) {
-                    console.warn('Falha ao salvar cache, continuando com exibição:', e);
-                }
-                displayChannels();
-                showLoadingIndicator(false);
-                console.log(`Carregamento total levou ${performance.now() - startTime} ms`);
-            }).catch(error => {
-                console.error('Erro no Worker:', error);
-                alert('Erro ao processar a lista M3U: ' + error.message);
-                showLoadingIndicator(false);
-            });
+            console.log('M3U content (first 500 chars):', content.substring(0, 500));
+            await parseM3UInChunks(content, tab, subcat);
+            console.log(`Parse concluído para ${tab}/${subcat}:`, Object.keys(allChannels[tab][subcat] || {}).length, 'itens');
+            try {
+                saveToCacheIfPossible(tab, subcat);
+            } catch (e) {
+                console.warn(`Falha ao salvar cache para ${tab}/${subcat}, continuando com exibição:`, e);
+            }
+            displayChannels();
+            showLoadingIndicator(false);
+            console.log(`Carregamento total levou ${performance.now() - startTime} ms`);
+            return true;
         } else {
             showLoadingIndicator(false);
             alert('Nenhum conteúdo M3U carregado.');
+            return false;
         }
     }
 
-    function parseM3UInWorker(content) {
+    async function parseM3UInChunks(content, tab, subcat) {
+        if (isParsing) {
+            console.warn('Parsing em andamento, aguardando conclusão...');
+            return;
+        }
+        isParsing = true;
+
+        try {
+            const lines = content.split('\n');
+            const totalLines = lines.length;
+            console.log(`Total de linhas no M3U: ${totalLines}`);
+
+            for (let i = 0; i < totalLines; i += CHUNK_SIZE) {
+                const chunk = lines.slice(i, i + CHUNK_SIZE);
+                console.log(`Processando chunk ${i / CHUNK_SIZE + 1} (${i} a ${Math.min(i + CHUNK_SIZE, totalLines)})`);
+                await new Promise((resolve, reject) => {
+                    parseM3UChunk(chunk, tab, subcat).then(resolve).catch(reject);
+                });
+                // Yield to avoid blocking the main thread
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        } catch (error) {
+            console.error('Erro ao processar M3U em chunks:', error);
+            alert('Erro ao processar a lista M3U: ' + error.message);
+        } finally {
+            isParsing = false;
+        }
+    }
+
+    function parseM3UChunk(chunk, tab, subcat) {
         return new Promise((resolve, reject) => {
             const workerCode = `
                 self.onmessage = function(e) {
                     try {
-                        var content = e.data;
-                        var lines = content.split("\\n");
-                        var allChannels = { filmes: {}, series: {}, tv: {} };
-                        var currentChannel = null;
+                        const { chunk, tab, subcat } = e.data;
+                        const lines = chunk;
+                        const channels = { filmes: {}, series: {}, tv: {} };
+                        let currentChannel = null;
 
                         function normalizeTitle(title) {
-                            return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
+                            return title ? title.trim().replace(/\\b\\w/g, c => c.toUpperCase()) : "Sem Título";
                         }
 
                         function parseGroup(group) {
-                            var clean = group.replace(/[◆]/g, "").trim();
-                            var parts = clean.split("|").map(function(part) { return part.trim(); });
-                            var main = parts[0].toLowerCase();
-                            var sub = parts.length > 1 ? parts[1] : "Outros";
-                            return { main: main, sub: sub };
+                            const clean = group.replace(/[◆]/g, "").trim();
+                            const parts = clean.split("|").map(part => part.trim());
+                            const main = parts[0].toLowerCase();
+                            const sub = parts.length > 1 ? parts[1] : "Outros";
+                            return { main, sub };
                         }
 
                         function categorizeChannel(channel) {
                             try {
-                                var title = channel.title.toLowerCase();
-                                var groupInfo = parseGroup(channel.group);
-                                var main = groupInfo.main;
-                                var sub = groupInfo.sub;
-                                var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
-                                var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
+                                const title = channel.title.toLowerCase();
+                                const groupInfo = parseGroup(channel.group);
+                                const main = groupInfo.main;
+                                const sub = groupInfo.sub;
 
-                                // Convert HTTP to HTTPS to avoid mixed content
+                                // Convert HTTP to HTTPS
                                 channel.url = channel.url.replace(/^http:/, 'https:');
                                 channel.logo = channel.logo ? channel.logo.replace(/^http:/, 'https:') : '';
 
+                                // Only process channels matching the requested tab and subcat
+                                if (tab !== 'all' && !main.includes(tab)) return;
+                                if (subcat !== 'all' && sub !== subcat) return;
+
+                                const hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
+                                const looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
+
                                 if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
-                                    if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                    allChannels.tv[sub].push({ 
+                                    if (!channels.tv[sub]) channels.tv[sub] = [];
+                                    channels.tv[sub].push({ 
                                         title: normalizeTitle(channel.title), 
                                         url: channel.url, 
                                         logo: channel.logo 
@@ -230,8 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                                 if (main.includes("series") || main.includes("série")) {
                                     if (hasSeriesPattern && !looksLikeLinearChannel) {
-                                        var seriesName, season, episodeTitle;
-                                        var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);
+                                        let seriesName, season, episodeTitle;
+                                        const match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);
                                         if (match) {
                                             seriesName = normalizeTitle(match[1]);
                                             season = match[2];
@@ -241,9 +265,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             season = "1";
                                             episodeTitle = normalizeTitle(title);
                                         }
-                                        var seriesKey = seriesName.toLowerCase();
-                                        if (!allChannels.series[sub]) allChannels.series[sub] = {};
-                                        var seriesSub = allChannels.series[sub];
+                                        const seriesKey = seriesName.toLowerCase();
+                                        if (!channels.series[sub]) channels.series[sub] = {};
+                                        const seriesSub = channels.series[sub];
                                         if (!seriesSub[seriesKey]) {
                                             seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };
                                         }
@@ -253,8 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                         seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });
                                         return;
                                     } else {
-                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                        allChannels.tv[sub].push({ 
+                                        if (!channels.tv[sub]) channels.tv[sub] = [];
+                                        channels.tv[sub].push({ 
                                             title: normalizeTitle(channel.title), 
                                             url: channel.url, 
                                             logo: channel.logo 
@@ -265,16 +289,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                                 if (main.includes("filmes") || main.includes("filme")) {
                                     if (!looksLikeLinearChannel && title.length > 5) {
-                                        if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];
-                                        allChannels.filmes[sub].push({ 
+                                        if (!channels.filmes[sub]) channels.filmes[sub] = [];
+                                        channels.filmes[sub].push({ 
                                             title: normalizeTitle(channel.title), 
                                             url: channel.url, 
                                             logo: channel.logo 
                                         });
                                         return;
                                     } else {
-                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                        allChannels.tv[sub].push({ 
+                                        if (!channels.tv[sub]) channels.tv[sub] = [];
+                                        channels.tv[sub].push({ 
                                             title: normalizeTitle(channel.title), 
                                             url: channel.url, 
                                             logo: channel.logo 
@@ -283,16 +307,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                     }
                                 }
 
-                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
-                                allChannels.tv["Outros"].push({ 
+                                if (!channels.tv["Outros"]) channels.tv["Outros"] = [];
+                                channels.tv["Outros"].push({ 
                                     title: normalizeTitle(channel.title), 
                                     url: channel.url, 
                                     logo: channel.logo 
                                 });
                             } catch (error) {
                                 console.error("Erro ao categorizar canal:", channel.title, error);
-                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
-                                allChannels.tv["Outros"].push({ 
+                                if (!channels.tv["Outros"]) channels.tv["Outros"] = [];
+                                channels.tv["Outros"].push({ 
                                     title: normalizeTitle(channel.title), 
                                     url: channel.url, 
                                     logo: channel.logo 
@@ -300,24 +324,22 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
-                        for (var i = 0; i < lines.length; i++) {
-                            var line = lines[i].trim();
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i].trim();
                             try {
                                 if (line.startsWith("#EXTINF:")) {
-                                    var titleMatch = line.match(/,(.+)$/) || line.match(/tvg-name=\"([^\"]+)\"/i);
-                                    var groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
-                                    var logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
-                                    var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
+                                    const titleMatch = line.match(/,(.+)$/) || line.match(/tvg-name=\"([^\"]+)\"/i);
+                                    const groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
+                                    const logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
+                                    const title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
                                     currentChannel = {
-                                        title: title,
+                                        title,
                                         url: "",
                                         group: groupMatch ? groupMatch[1] : "",
                                         logo: logoMatch ? logoMatch[1] : ""
                                     };
-                                    console.log('Parsed channel:', currentChannel);
                                 } else if (line && !line.startsWith("#") && currentChannel) {
                                     currentChannel.url = line;
-                                    console.log('Categorized channel:', currentChannel);
                                     categorizeChannel(currentChannel);
                                     currentChannel = null;
                                 }
@@ -327,8 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
 
-                        console.log('Final parsed channels:', JSON.stringify(allChannels, null, 2));
-                        self.postMessage(allChannels);
+                        self.postMessage(channels);
                     } catch (error) {
                         self.postMessage({ error: "Erro geral no parsing: " + error.message });
                     }
@@ -342,7 +363,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (e.data.error) {
                     reject(new Error(e.data.error));
                 } else {
-                    resolve(e.data);
+                    const channels = e.data;
+                    // Merge chunk data into allChannels
+                    if (channels.filmes[subcat]) allChannels.filmes[subcat] = channels.filmes[subcat];
+                    if (channels.series[subcat]) allChannels.series[subcat] = channels.series[subcat];
+                    if (channels.tv[subcat]) allChannels.tv[subcat] = channels.tv[subcat];
+                    resolve();
                 }
                 worker.terminate();
             };
@@ -352,32 +378,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 worker.terminate();
             };
 
-            worker.postMessage(content);
+            worker.postMessage({ chunk, tab, subcat });
         });
     }
 
-    function saveToCacheIfPossible() {
+    function saveToCacheIfPossible(tab, subcat) {
+        const cacheKey = `m3u_data_${tab}_${subcat}`;
         let cacheData;
         try {
-            cacheData = JSON.stringify({ timestamp: Date.now(), data: allChannels });
+            cacheData = JSON.stringify({ timestamp: Date.now(), data: allChannels[tab][subcat] });
             if (cacheData.length < MAX_CACHE_SIZE) {
-                localStorage.setItem('m3u_data', cacheData);
-                console.log('Cache salvo com sucesso no localStorage');
+                localStorage.setItem(cacheKey, cacheData);
+                console.log(`Cache salvo com sucesso no localStorage para ${tab}/${subcat}`);
             } else {
-                console.warn('Cache excedeu o limite do localStorage, usando IndexedDB.');
-                saveToIndexedDB(cacheData);
+                console.warn(`Cache excedeu o limite do localStorage para ${tab}/${subcat}, usando IndexedDB.`);
+                saveToIndexedDB(cacheKey, cacheData);
             }
         } catch (e) {
-            console.error('Erro ao salvar no localStorage:', e);
+            console.error(`Erro ao salvar no localStorage para ${tab}/${subcat}:`, e);
             if (cacheData) {
-                saveToIndexedDB(cacheData);
+                saveToIndexedDB(cacheKey, cacheData);
             } else {
-                console.warn('cacheData não definido, ignorando salvamento no IndexedDB');
+                console.warn(`cacheData não definido, ignorando salvamento no IndexedDB para ${tab}/${subcat}`);
             }
         }
     }
 
-    async function saveToIndexedDB(cacheData) {
+    async function saveToIndexedDB(cacheKey, cacheData) {
         try {
             const dbRequest = indexedDB.open('m3uDatabase', 1);
 
@@ -396,13 +423,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const transaction = db.transaction(['m3uStore'], 'readwrite');
             const store = transaction.objectStore('m3uStore');
             await new Promise((resolve, reject) => {
-                const request = store.put({ key: 'm3u_data', data: cacheData });
+                const request = store.put({ key: cacheKey, data: cacheData });
                 request.onsuccess = () => resolve();
                 request.onerror = () => reject(request.error);
             });
-            console.log('Cache salvo no IndexedDB');
+            console.log(`Cache salvo no IndexedDB para ${cacheKey}`);
         } catch (error) {
-            console.error('Erro ao salvar no IndexedDB:', error);
+            console.error(`Erro ao salvar no IndexedDB para ${cacheKey}:`, error);
         }
     }
 
@@ -761,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let tvPlayerInitialized = false;
 
-    window.switchTab = function(tab) {
+    window.switchTab = async function(tab) {
         const mainContent = document.querySelector('.max-w-6xl.mx-auto.p-4');
         const tvPlayerContainer = document.getElementById('tv-player-container');
         const navbar = document.getElementById('main-nav');
@@ -776,6 +803,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 tvPlayerInitialized = true;
             }
             checkProtocolAndWarn();
+            // Load TV channels if not already loaded
+            if (!allChannels.tv[currentSubcat]) {
+                await loadM3U('tv', currentSubcat);
+            }
         } else {
             mainContent.style.display = 'block';
             navbar.style.display = 'flex';
@@ -798,6 +829,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
             const categoryElement = document.getElementById(`${tab}-category`);
             if (categoryElement) categoryElement.classList.add('active');
+            // Load data for the new tab if not already loaded
+            if (!allChannels[tab][currentSubcat]) {
+                await loadM3U(tab, currentSubcat);
+            }
             displayChannels(document.getElementById('search')?.value || '');
         }
     }
@@ -904,13 +939,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categoryFilter = document.getElementById('category-filter');
     if (categoryFilter) {
-        categoryFilter.addEventListener('change', (e) => {
+        categoryFilter.addEventListener('change', async (e) => {
             currentSubcat = e.target.value;
+            if (!allChannels[currentTab][currentSubcat]) {
+                await loadM3U(currentTab, currentSubcat);
+            }
             displayChannels(document.getElementById('search')?.value || '');
         });
     } else {
         console.error('Seletor de categoria (#category-filter) não encontrado no DOM');
     }
 
-    loadM3U();
+    // Initial load for default tab
+    loadM3U(currentTab, currentSubcat);
 });
