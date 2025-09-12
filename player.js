@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const NAVIGATION_DEBOUNCE_MS = 1000;
     const CACHE_VALIDITY_MS = 24 * 3600000; // 24 horas
     const POSTER_CACHE = new Map(); // Cache para URLs de capas
-    let tvHlsInstance = null;
 
     function normalizeTitle(title) {
         return title ? title.trim().replace(/\b\w/g, c => c.toUpperCase()) : 'Sem Título';
@@ -26,12 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function checkProtocolAndWarn() {
-        const hasSeenProtocolWarning = localStorage.getItem('hasSeenProtocolWarning') === 'true';
-        const protocolWarningPopup = document.getElementById('protocolWarningPopup');
-        if (!hasSeenProtocolWarning && protocolWarningPopup) {
-            protocolWarningPopup.style.display = 'flex';
-            localStorage.setItem('hasSeenProtocolWarning', 'true');
-        }
+        if (!hasSeenProtocolWarning) {
+        protocolWarningPopup.style.display = 'flex';
+    }
     }
 
     // Função para buscar capa da série via Kitsu API
@@ -105,10 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoadingIndicator(true);
 
         const filePaths = [
-            'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u',
-            'https://iptv-org.github.io/iptv/countries/br.m3u' // Added public fallback for functionality
+            'https://pub-b518a77f46ca4165b58d8329e13fb2a9.r2.dev/206609967_playlist.m3u'
         ];
-        const fallbackUrl = 'https://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
+        const fallbackUrl = 'http://cdnnekotv.sbs/get.php?username=206609967&password=860883584&type=m3u_plus&output=m3u8';
 
         let content = null;
         let loadedFrom = '';
@@ -145,10 +140,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadedFrom = fallbackUrl;
                     console.log(`Carregado de fallback URL em ${performance.now() - fetchStart} ms`);
                 } else {
-                    console.error(`Falha ao carregar fallback URL: ${response.status}`);
-                    alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
-                    showLoadingIndicator(false);
-                    return;
+                    // Tentar reconexão com HTTP explícito como fallback
+                    const httpFallbackUrl = fallbackUrl.replace('https://', 'http://');
+                    const httpResponse = await fetch(httpFallbackUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0',
+                            'Accept': 'text/plain,*/*',
+                            'Referer': 'http://localhost'
+                        }
+                    });
+                    if (httpResponse.ok) {
+                        content = await httpResponse.text();
+                        loadedFrom = httpFallbackUrl;
+                        console.log(`Carregado de fallback HTTP URL em ${performance.now() - fetchStart} ms`);
+                    } else {
+                        console.error(`Falha ao carregar fallback HTTP URL: ${httpFallbackUrl}`, httpResponse.status);
+                        alert(`Erro ao carregar a lista M3U após tentativas de reconexão`);
+                        showLoadingIndicator(false);
+                        return;
+                    }
                 }
             } catch (error) {
                 console.error(`Falha ao carregar fallback URL:`, error.message);
@@ -211,9 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 var sub = groupInfo.sub;
                                 var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
                                 var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
-
-                                channel.url = channel.url.replace(/^http:/, 'https:');
-                                channel.logo = channel.logo ? channel.logo.replace(/^http:/, 'https:') : '';
 
                                 if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
                                     if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
@@ -301,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             var line = lines[i].trim();
                             try {
                                 if (line.startsWith("#EXTINF:")) {
-                                    var titleMatch = line.match(/,(.+)$/ ) || line.match(/tvg-name="([^"]+)"/i);
+                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name="([^"]+)"/i);
                                     var groupMatch = line.match(/group-title="([^"]+)"/i);
                                     var logoMatch = line.match(/tvg-logo="([^"]+)"/i);
                                     var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
@@ -749,7 +756,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContent = document.querySelector('.max-w-6xl.mx-auto.p-4');
         const tvPlayerContainer = document.getElementById('tv-player-container');
         const navbar = document.getElementById('main-nav');
-        const tvPlayer = document.getElementById('tvPlayer');
 
         if (tab === 'tv') {
             mainContent.style.display = 'none';
@@ -764,15 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.style.display = 'block';
             navbar.style.display = 'flex';
             tvPlayerContainer.style.display = 'none';
-            
-            if (tvHlsInstance) {
-                tvHlsInstance.destroy();
-            }
-            if (tvPlayer) {
-                tvPlayer.pause();
-                tvPlayer.src = '';
-                tvPlayer.removeAttribute('src');
-            }
             
             currentTab = tab;
             currentSubcat = 'all';
@@ -790,7 +787,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const videoPlayer = document.getElementById('tvPlayer');
         const channelList = document.getElementById('channel-list-tv');
         const searchInput = document.getElementById('channel-search-tv');
-        tvHlsInstance = new Hls();
+        let hls = new Hls();
         let allTvChannels = [];
 
         for (let sub in allChannels.tv) {
@@ -828,14 +825,14 @@ document.addEventListener('DOMContentLoaded', () => {
         function playChannel(url) {
             if (url.endsWith('.m3u8')) {
                 if (Hls.isSupported()) {
-                    tvHlsInstance.destroy();
+                    hls.destroy();
                     const hlsConfig = {
                         maxMaxBufferLength: 100,
                     };
-                    tvHlsInstance = new Hls(hlsConfig);
-                    tvHlsInstance.loadSource(url);
-                    tvHlsInstance.attachMedia(videoPlayer);
-                    tvHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+                    hls = new Hls(hlsConfig);
+                    hls.loadSource(url);
+                    hls.attachMedia(videoPlayer);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
                         videoPlayer.play();
                     });
                 } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
