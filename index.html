@@ -82,7 +82,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.85);
       z-index: 1000;
       align-items: center;
       justify-content: center;
@@ -91,11 +91,11 @@
 
     .modal-content {
       background-color: #1c1c1c;
-      border-radius: 10px;
+      border-radius: 8px;
       width: 90%;
-      max-width: 900px;
-      height: 80%;
-      max-height: 600px;
+      max-width: 1000px;
+      height: 85%;
+      max-height: 650px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -104,7 +104,7 @@
     }
 
     .modal-header {
-      padding: 15px 20px;
+      padding: 12px 20px;
       background-color: #2a2a2a;
       display: flex;
       justify-content: space-between;
@@ -114,7 +114,8 @@
 
     .modal-header h2 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
+      font-weight: bold;
     }
 
     .modal-header button {
@@ -123,6 +124,7 @@
       color: white;
       font-size: 1.5rem;
       cursor: pointer;
+      padding: 0 10px;
     }
 
     .modal-body {
@@ -132,8 +134,9 @@
     }
 
     .video-container {
-      flex: 2;
+      flex: 3;
       background: #000;
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -143,13 +146,15 @@
       width: 100%;
       height: 100%;
       object-fit: contain;
+      display: block;
     }
 
     .channel-list-container {
       flex: 1;
       background: #222;
       overflow-y: auto;
-      padding: 10px;
+      padding: 12px;
+      border-left: 1px solid #333;
     }
 
     .channel-list-container ul {
@@ -161,10 +166,11 @@
     .channel-list-container li {
       display: flex;
       align-items: center;
-      padding: 10px;
-      margin: 5px 0;
+      padding: 8px;
+      margin: 4px 0;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
     }
 
     .channel-list-container li:hover {
@@ -173,30 +179,52 @@
 
     .channel-list-container li.active {
       background-color: #e50914;
+      color: white;
     }
 
     .channel-list-container img {
-      width: 40px;
-      height: 40px;
-      margin-right: 10px;
-      border-radius: 5px;
+      width: 36px;
+      height: 36px;
+      margin-right: 8px;
+      border-radius: 4px;
+      object-fit: cover;
     }
 
     .channel-search {
       width: 100%;
-      padding: 10px;
-      margin-bottom: 10px;
+      padding: 8px;
+      margin-bottom: 12px;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
       background: #333;
       color: white;
+      font-size: 0.9rem;
+    }
+
+    .channel-search:focus {
+      outline: none;
+      background: #444;
+    }
+
+    /* Controles de vídeo personalizados para celular */
+    video::-webkit-media-controls-panel {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 8px;
+    }
+
+    video::-webkit-media-controls-play-button,
+    video::-webkit-media-controls-mute-button,
+    video::-webkit-media-controls-fullscreen-button {
+      min-width: 48px;
+      min-height: 48px;
+      margin: 0 4px;
     }
 
     /* Responsividade */
     @media (max-width: 768px) {
       .modal-content {
-        width: 95%;
-        height: 90%;
+        width: 98%;
+        height: 95%;
         flex-direction: column;
       }
       .modal-body {
@@ -209,6 +237,25 @@
       .channel-list-container {
         flex: none;
         height: 50%;
+        border-left: none;
+        border-top: 1px solid #333;
+      }
+      .modal-header h2 {
+        font-size: 1.1rem;
+      }
+      .modal-header button {
+        font-size: 1.25rem;
+      }
+      .channel-list-container li {
+        padding: 10px;
+      }
+      .channel-list-container img {
+        width: 32px;
+        height: 32px;
+      }
+      .channel-search {
+        padding: 10px;
+        font-size: 0.85rem;
       }
       .hamburger {
         display: block;
@@ -228,13 +275,13 @@
         display: none;
       }
       video::-webkit-media-controls-panel {
-        height: 48px;
+        height: 56px;
       }
       video::-webkit-media-controls-play-button,
       video::-webkit-media-controls-mute-button,
       video::-webkit-media-controls-fullscreen-button {
-        min-width: 48px;
-        min-height: 48px;
+        min-width: 56px;
+        min-height: 56px;
       }
     }
 
@@ -245,7 +292,7 @@
     }
 
     @keyframes slideIn {
-      from { transform: translateY(-50px); opacity: 0; }
+      from { transform: translateY(-20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
   </style>
@@ -457,7 +504,7 @@
 
     function openTvPlayerModal() {
       document.getElementById('tv-player-modal').style.display = 'flex';
-      // Carrega os canais (a função loadM3U já está no player-tv.js)
+      // Carrega os canais (a função loadM3U está no player-tv.js)
     }
 
     function closeTvPlayerModal() {
