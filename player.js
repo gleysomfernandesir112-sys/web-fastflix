@@ -194,148 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function parseM3UInWorker(content) {
         return new Promise((resolve, reject) => {
-            const workerCode = `
-                self.onmessage = function(e) {
-                    try {
-                        var content = e.data;
-                        var lines = content.split("\n");
-                        var allChannels = { filmes: {}, series: {}, tv: {} };
-                        var currentChannel = null;
-
-                        function normalizeTitle(title) {
-                            return title ? title.trim().replace(/\b\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
-                        }
-
-                        function parseGroup(group) {
-                            var clean = group.replace(/[◆]/g, "").trim();
-                            var parts = clean.split("|").map(function(part) { return part.trim(); });
-                            var main = parts[0].toLowerCase();
-                            var sub = parts.length > 1 ? parts[1] : "Outros";
-                            return { main: main, sub: sub };
-                        }
-
-                        function categorizeChannel(channel) {
-                            try {
-                                var title = channel.title.toLowerCase();
-                                var groupInfo = parseGroup(channel.group);
-                                var main = groupInfo.main;
-                                var sub = groupInfo.sub;
-                                var hasSeriesPattern = /(s\d{1,2}e\d{1,2})|(temporada\s*\d+)|(episodio\s*\d+)/i.test(title);
-                                var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
-
-                                if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
-                                    if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                    allChannels.tv[sub].push({ 
-                                        title: normalizeTitle(channel.title), 
-                                        url: channel.url, 
-                                        logo: channel.logo 
-                                    });
-                                    return;
-                                }
-
-                                if (main.includes("series") || main.includes("série")) {
-                                    if (hasSeriesPattern && !looksLikeLinearChannel) {
-                                        var seriesName, season, episodeTitle;
-                                        var match = title.match(/^(.*?)\s*[Ss](\d{1,2})\s*[Ee](\d{1,2})/);
-                                        if (match) {
-                                            seriesName = normalizeTitle(match[1]);
-                                            season = match[2];
-                                            episodeTitle = "Episodio " + match[3];
-                                        } else {
-                                            seriesName = normalizeTitle(title.replace(/(temporada|episodio).*/i, "").trim());
-                                            season = "1";
-                                            episodeTitle = normalizeTitle(title);
-                                        }
-                                        var seriesKey = seriesName.toLowerCase();
-                                        if (!allChannels.series[sub]) allChannels.series[sub] = {};
-                                        var seriesSub = allChannels.series[sub];
-                                        if (!seriesSub[seriesKey]) {
-                                            seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };
-                                        }
-                                        if (!seriesSub[seriesKey].seasons[season]) {
-                                            seriesSub[seriesKey].seasons[season] = [];
-                                        }
-                                        seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });
-                                        return;
-                                    } else {
-                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                        allChannels.tv[sub].push({ 
-                                            title: normalizeTitle(channel.title), 
-                                            url: channel.url, 
-                                            logo: channel.logo 
-                                        });
-                                        return;
-                                    }
-                                }
-
-                                if (main.includes("filmes") || main.includes("filme")) {
-                                    if (!looksLikeLinearChannel && title.length > 5) {
-                                        if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];
-                                        allChannels.filmes[sub].push({ 
-                                            title: normalizeTitle(channel.title), 
-                                            url: channel.url, 
-                                            logo: channel.logo 
-                                        });
-                                        return;
-                                    } else {
-                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];
-                                        allChannels.tv[sub].push({ 
-                                            title: normalizeTitle(channel.title), 
-                                            url: channel.url, 
-                                            logo: channel.logo 
-                                        });
-                                        return;
-                                    }
-                                }
-
-                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
-                                allChannels.tv["Outros"].push({ 
-                                    title: normalizeTitle(channel.title), 
-                                    url: channel.url, 
-                                    logo: channel.logo 
-                                });
-                            } catch (error) {
-                                console.error("Erro ao categorizar canal:", channel.title, error);
-                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];
-                                allChannels.tv["Outros"].push({ 
-                                    title: normalizeTitle(channel.title), 
-                                    url: channel.url, 
-                                    logo: channel.logo 
-                                });
-                            }
-                        }
-
-                        for (var i = 0; i < lines.length; i++) {
-                            var line = lines[i].trim();
-                            try {
-                                if (line.startsWith("#EXTINF:")) {
-                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name=\"([^\"]+)\"/i);
-                                    var groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
-                                    var logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
-                                    var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
-                                    currentChannel = {
-                                        title: title,
-                                        url: "",
-                                        group: groupMatch ? groupMatch[1] : "",
-                                        logo: logoMatch ? logoMatch[1] : ""
-                                    };
-                                } else if (line && !line.startsWith("#") && currentChannel) {
-                                    currentChannel.url = line;
-                                    categorizeChannel(currentChannel);
-                                    currentChannel = null;
-                                }
-                            } catch (error) {
-                                console.error("Erro ao processar linha", i, ":", line, error);
-                                currentChannel = null;
-                            }
-                        }
-
-                        self.postMessage(allChannels);
-                    } catch (error) {
-                        self.postMessage({ error: "Erro geral no parsing: " + error.message });
-                    }
-                };
-            `;
+            const workerCode = `\n                self.onmessage = function(e) {\n                    console.log(\"[Worker] Received data.\");\n                    try {\n                        var content = e.data;\n                        if (!content || typeof content !== 'string') {\n                            console.error(\"[Worker] Invalid content received.\");\n                            self.postMessage({ filmes: {}, series: {}, tv: {} });\n                            return;\n                        }\n                        var lines = content.split("\\n");\n                        console.log(\"[Worker] Processing " + lines.length + " lines.\");\n                        var allChannels = { filmes: {}, series: {}, tv: {} };\n                        var currentChannel = null;\n                        var channelsFound = 0;\n\n                        function normalizeTitle(title) {\n                            return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";\n                        }\n\n                        function parseGroup(group) {\n                            var clean = group.replace(/[◆]/g, "").trim();\n                            var parts = clean.split("|").map(function(part) { return part.trim(); });\n                            var main = parts[0].toLowerCase();\n                            var sub = parts.length > 1 ? parts[1] : "Outros";\n                            return { main: main, sub: sub };\n                        }\n\n                        function categorizeChannel(channel) {\n                            try {\n                                var title = channel.title.toLowerCase();\n                                var groupInfo = parseGroup(channel.group);\n                                var main = groupInfo.main;\n                                var sub = groupInfo.sub;\n                                var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);\n                                var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);\n\n                                if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {\n                                    if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                    allChannels.tv[sub].push({ \n                                        title: normalizeTitle(channel.title), \n                                        url: channel.url, \n                                        logo: channel.logo \n                                    });\n                                    return;\n                                }\n\n                                if (main.includes("series") || main.includes("série")) {\n                                    if (hasSeriesPattern && !looksLikeLinearChannel) {\n                                        var seriesName, season, episodeTitle;\n                                        var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);\n                                        if (match) {\n                                            seriesName = normalizeTitle(match[1]);\n                                            season = match[2];\n                                            episodeTitle = "Episodio " + match[3];\n                                        } else {\n                                            seriesName = normalizeTitle(title.replace(/(temporada|episodio).*/i, "").trim());\n                                            season = "1";\n                                            episodeTitle = normalizeTitle(title);\n                                        }\n                                        var seriesKey = seriesName.toLowerCase();\n                                        if (!allChannels.series[sub]) allChannels.series[sub] = {};\n                                        var seriesSub = allChannels.series[sub];\n                                        if (!seriesSub[seriesKey]) {\n                                            seriesSub[seriesKey] = { displayName: seriesName, seasons: {}, logo: channel.logo };\n                                        }\n                                        if (!seriesSub[seriesKey].seasons[season]) {\n                                            seriesSub[seriesKey].seasons[season] = [];\n                                        }\n                                        seriesSub[seriesKey].seasons[season].push({ title: episodeTitle, url: channel.url, logo: channel.logo });\n                                        return;\n                                    } else {\n                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                        allChannels.tv[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    }\n                                }\n\n                                if (main.includes("filmes") || main.includes("filme")) {\n                                    if (!looksLikeLinearChannel && title.length > 5) {\n                                        if (!allChannels.filmes[sub]) allChannels.filmes[sub] = [];\n                                        allChannels.filmes[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    } else {\n                                        if (!allChannels.tv[sub]) allChannels.tv[sub] = [];\n                                        allChannels.tv[sub].push({ \n                                            title: normalizeTitle(channel.title), \n                                            url: channel.url, \n                                            logo: channel.logo \n                                        });\n                                        return;\n                                    }\n                                }\n\n                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];\n                                allChannels.tv["Outros"].push({ \n                                    title: normalizeTitle(channel.title), \n                                    url: channel.url, \n                                    logo: channel.logo \n                                });\n                            } catch (error) {\n                                console.error("Erro ao categorizar canal:", channel.title, error);\n                                if (!allChannels.tv["Outros"]) allChannels.tv["Outros"] = [];\n                                allChannels.tv["Outros"].push({ \n                                    title: normalizeTitle(channel.title), \n                                    url: channel.url, \n                                    logo: channel.logo \n                                });\n                            }\n                        }\n\n                        for (var i = 0; i < lines.length; i++) {\n                            var line = lines[i].trim();\n                            try {\n                                if (line.startsWith("#EXTINF:")) {\n                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name=\"[^\"]+\"/i);\n                                    var groupMatch = line.match(/group-title=\"[^\"]+\"/i);\n                                    var logoMatch = line.match(/tvg-logo=\"[^\"]+\"/i);\n                                    var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";\n                                    currentChannel = {\n                                        title: title,\n                                        url: "",\n                                        group: groupMatch ? groupMatch[1] : "",\n                                        logo: logoMatch ? logoMatch[1] : ""\n                                    };\n                                } else if (line && !line.startsWith("#") && currentChannel) {\n                                    currentChannel.url = line;\n                                    categorizeChannel(currentChannel);\n                                    channelsFound++;\n                                    currentChannel = null;\n                                }\n                            } catch (error) {\n                                console.error(\"[Worker] Error processing line " + i + ":", line, error);\n                                currentChannel = null;\n                            }\n                        }\n                        console.log(\"[Worker] Parsing complete. Found " + channelsFound + " channels.\");\n                        console.log(\"[Worker] Final data:", allChannels);\n                        self.postMessage(allChannels);\n                    } catch (error) {\n                        console.error(\"[Worker] General parsing error:\", error);\n                        self.postMessage({ error: "Erro geral no parsing: " + error.message });\n                    }\n                };\n            `;
 
             const blob = new Blob([workerCode], { type: 'application/javascript; charset=utf-8' });
             const worker = new Worker(URL.createObjectURL(blob));
@@ -412,8 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
             loadingEl.style.display = show ? 'block' : 'none';
-        }
-    } else {
+        } else {
             console.warn('Elemento de loading (#loading) não encontrado no DOM');
         }
     }
@@ -544,10 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createMovieCard(item) {
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
-        div.innerHTML = `
-            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=Filme'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
-            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
-        `;
+        div.innerHTML = `\n            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=Filme'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>\n        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openMoviePlayerModal(item.url);
@@ -561,10 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let posterUrl = item.logo || await fetchSeriesPoster(item.displayName);
         
-        div.innerHTML = `
-            <img src="${posterUrl}" alt="${item.displayName || 'Sem Título'}" class="w-full h-auto object-cover">
-            <p class="p-2 text-center text-sm">${item.displayName || 'Sem Título'}</p>
-        `;
+        div.innerHTML = `\n            <img src="${posterUrl}" alt="${item.displayName || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.displayName || 'Sem Título'}</p>\n        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openSeriesPlayerModal(item);
@@ -575,10 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createTVCard(item) {
         const div = document.createElement('div');
         div.className = 'card bg-gray-800 rounded-md overflow-hidden';
-        div.innerHTML = `
-            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=TV'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">
-            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>
-        `;
+        div.innerHTML = `\n            <img src="${item.logo || 'https://via.placeholder.com/200x300?text=TV'}" alt="${item.title || 'Sem Título'}" class="w-full h-auto object-cover">\n            <p class="p-2 text-center text-sm">${item.title || 'Sem Título'}</p>\n        `;
         div.addEventListener('click', (e) => {
             e.preventDefault();
             openMoviePlayerModal(item.url);
@@ -821,10 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredChannels.forEach(channel => {
                 const li = document.createElement('li');
                 li.className = 'p-2 hover:bg-gray-700 rounded cursor-pointer flex items-center';
-                li.innerHTML = `
-                    <img src="${channel.logo || 'https://via.placeholder.com/50x50?text=TV'}" alt="${channel.title}" class="w-10 h-10 mr-4">
-                    <span>${normalizeTitle(channel.title)}</span>
-                `;
+                li.innerHTML = `\n                    <img src="${channel.logo || 'https://via.placeholder.com/50x50?text=TV'}" alt="${channel.title}" class="w-10 h-10 mr-4">\n                    <span>${normalizeTitle(channel.title)}</span>\n                `;
                 li.addEventListener('click', () => {
                     playChannel(channel.url);
                     document.querySelectorAll('#channel-list-tv li.active').forEach(el => el.classList.remove('active'));
