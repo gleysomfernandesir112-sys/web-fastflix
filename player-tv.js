@@ -87,29 +87,5 @@ document.addEventListener('DOMContentLoaded', () => {
         renderChannels(e.target.value);
     });
 
-    const backButton = document.querySelector('.back-button');
-
-    if (backButton) {
-        backButton.addEventListener('click', (e) => {
-            e.preventDefault(); // Impede a navegação imediata
-
-            if (hls) {
-                hls.stopLoad();
-                hls.destroy();
-            }
-            if (videoPlayer) {
-                videoPlayer.pause();
-                videoPlayer.src = "";
-                videoPlayer.removeAttribute('src'); // For good measure
-                videoPlayer.load();
-            }
-
-            // Atraso para garantir que tudo foi limpo antes de navegar
-            setTimeout(() => {
-                window.location.href = e.target.href;
-            }, 100);
-        });
-    }
-
     loadM3U();
 });
