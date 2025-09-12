@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         var currentChannel = null;
 
                         function normalizeTitle(title) {
-                            return title ? title.trim().replace(/\\b\\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
+                            return title ? title.trim().replace(/\b\w/g, function(c) { return c.toUpperCase(); }) : "Sem Título";
                         }
 
                         function parseGroup(group) {
@@ -220,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 var groupInfo = parseGroup(channel.group);
                                 var main = groupInfo.main;
                                 var sub = groupInfo.sub;
-                                var hasSeriesPattern = /(s\\d{1,2}e\\d{1,2})|(temporada\\s*\\d+)|(episodio\\s*\\d+)/i.test(title);
+                                var hasSeriesPattern = /(s\d{1,2}e\d{1,2})|(temporada\s*\d+)|(episodio\s*\d+)/i.test(title);
                                 var looksLikeLinearChannel = /(24h|canal|mix|ao vivo|live|4k|fhd|hd|sd|channel|tv|plus)/i.test(title);
 
                                 if (main.includes("canais") || main.includes("canal") || looksLikeLinearChannel) {
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (main.includes("series") || main.includes("série")) {
                                     if (hasSeriesPattern && !looksLikeLinearChannel) {
                                         var seriesName, season, episodeTitle;
-                                        var match = title.match(/^(.*?)\\s*[Ss](\\d{1,2})\\s*[Ee](\\d{1,2})/);
+                                        var match = title.match(/^(.*?)\s*[Ss](\d{1,2})\s*[Ee](\d{1,2})/);
                                         if (match) {
                                             seriesName = normalizeTitle(match[1]);
                                             season = match[2];
@@ -412,7 +412,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
             loadingEl.style.display = show ? 'block' : 'none';
-        } else {
+        }
+    } else {
             console.warn('Elemento de loading (#loading) não encontrado no DOM');
         }
     }
@@ -852,7 +853,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         videoPlayer.play();
                     });
                 }
-            } else { // For MP4 and other formats
+            }
+        } else { // For MP4 and other formats
                 videoPlayer.src = url;
                 videoPlayer.play();
             }
