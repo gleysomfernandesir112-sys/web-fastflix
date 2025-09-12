@@ -177,6 +177,19 @@
         background-color: #e50914;
         font-weight: bold;
     }
+
+    /* Melhora a usabilidade dos controles de vídeo em dispositivos móveis */
+    @media (max-width: 768px) {
+      video::-webkit-media-controls-panel {
+        height: 48px; /* Aumenta a altura da barra de controles */
+      }
+      video::-webkit-media-controls-play-button,
+      video::-webkit-media-controls-mute-button,
+      video::-webkit-media-controls-fullscreen-button {
+        min-width: 48px; /* Aumenta a área de toque dos botões */
+        min-height: 48px;
+      }
+    }
   </style>
 </head>
 <body class="player-page">

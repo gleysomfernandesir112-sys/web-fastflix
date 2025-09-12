@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const NAVIGATION_DEBOUNCE_MS = 1000;
     const CACHE_VALIDITY_MS = 24 * 3600000; // 24 horas
     const POSTER_CACHE = new Map(); // Cache para URLs de capas
+    let tvHlsInstance = null;
 
     function normalizeTitle(title) {
         return title ? title.trim().replace(/\b\w/g, c => c.toUpperCase()) : 'Sem Título';
@@ -197,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 self.onmessage = function(e) {
                     try {
                         var content = e.data;
-                        var lines = content.split("\\n");
+                        var lines = content.split("\n");
                         var allChannels = { filmes: {}, series: {}, tv: {} };
                         var currentChannel = null;
 
@@ -308,9 +309,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             var line = lines[i].trim();
                             try {
                                 if (line.startsWith("#EXTINF:")) {
-                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name="([^"]+)"/i);
-                                    var groupMatch = line.match(/group-title="([^"]+)"/i);
-                                    var logoMatch = line.match(/tvg-logo="([^"]+)"/i);
+                                    var titleMatch = line.match(/,(.+)/) || line.match(/tvg-name=\"([^\"]+)\"/i);
+                                    var groupMatch = line.match(/group-title=\"([^\"]+)\"/i);
+                                    var logoMatch = line.match(/tvg-logo=\"([^\"]+)\"/i);
                                     var title = titleMatch ? titleMatch[1].trim() : "Canal Desconhecido";
                                     currentChannel = {
                                         title: title,
@@ -756,6 +757,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContent = document.querySelector('.max-w-6xl.mx-auto.p-4');
         const tvPlayerContainer = document.getElementById('tv-player-container');
         const navbar = document.getElementById('main-nav');
+        const tvPlayer = document.getElementById('tvPlayer');
 
         if (tab === 'tv') {
             mainContent.style.display = 'none';
@@ -770,6 +772,15 @@ document.addEventListener('DOMContentLoaded', () => {
             mainContent.style.display = 'block';
             navbar.style.display = 'flex';
             tvPlayerContainer.style.display = 'none';
+            
+            if (tvHlsInstance) {
+                tvHlsInstance.destroy();
+            }
+            if (tvPlayer) {
+                tvPlayer.pause();
+                tvPlayer.src = '';
+                tvPlayer.removeAttribute('src');
+            }
             
             currentTab = tab;
             currentSubcat = 'all';
@@ -787,7 +798,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const videoPlayer = document.getElementById('tvPlayer');
         const channelList = document.getElementById('channel-list-tv');
         const searchInput = document.getElementById('channel-search-tv');
-        let hls = new Hls();
+        tvHlsInstance = new Hls();
         let allTvChannels = [];
 
         for (let sub in allChannels.tv) {
@@ -825,14 +836,14 @@ document.addEventListener('DOMContentLoaded', () => {
         function playChannel(url) {
             if (url.endsWith('.m3u8')) {
                 if (Hls.isSupported()) {
-                    hls.destroy();
+                    tvHlsInstance.destroy();
                     const hlsConfig = {
                         maxMaxBufferLength: 100,
                     };
-                    hls = new Hls(hlsConfig);
-                    hls.loadSource(url);
-                    hls.attachMedia(videoPlayer);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    tvHlsInstance = new Hls(hlsConfig);
+                    tvHlsInstance.loadSource(url);
+                    tvHlsInstance.attachMedia(videoPlayer);
+                    tvHlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
                         videoPlayer.play();
                     });
                 } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
